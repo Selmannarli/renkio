@@ -81,3 +81,5 @@ Object.assign(EN,{'Pas geçilsin mi?':'Pass this turn?','Bu tur taş oynamadan s
 Object.assign(EN,{'Elma fırlatmak için çek ve bırak':'Pull and release to throw an apple'});
 
 Object.assign(EN,{'Hediye':'Gift','Elmas':'Gems'});
+
+Object.assign(EN,{'Rehberli oyun':'Guided game','Eğitimi ana menüden başlatabilirsin.':'Start the tutorial from the home screen.'});

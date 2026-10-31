@@ -49,7 +49,31 @@ public class CrossplaySmoke extends OfflineSmoke {
  android.content.SharedPreferences prefs=getContext().getSharedPreferences("identity-smoke",0);if(before){prefs.edit().putString("expected",id).commit();result.putString("result","PASS: pre-update guest identity saved "+id);}else{String expected=args.getString("expected",prefs.getString("expected",""));if(expected.isEmpty()||!expected.equals(id))throw new Exception("Guest identity changed: expected "+expected+", received "+id);result.putString("result","PASS: installed native update preserved guest identity "+id);}
  finish(Activity.RESULT_OK,result);
  }catch(Exception e){result.putString("error",e.toString());finish(Activity.RESULT_CANCELED,result);}}
- @Override public void onStart(){if("startup".equals(args.getString("mode"))){startupSmoke();return;}if("back".equals(args.getString("mode"))){backSmoke();return;}if("identity-before".equals(args.getString("mode"))){identitySmoke(true);return;}if("identity-after".equals(args.getString("mode"))){identitySmoke(false);return;}if("push".equals(args.getString("mode"))){PushSmoke.run(this);return;}if("offline".equals(args.getString("mode"))){super.onStart();return;}if("match".equals(args.getString("mode"))){matchSmoke();return;}Bundle result=new Bundle();try{
+
+ private void tutorialSmoke(){Bundle result=new Bundle();try{
+ Activity a=startActivitySync(getTargetContext().getPackageManager().getLaunchIntentForPackage("com.renkio.game"));WebView web=findWebView(a.getWindow().getDecorView());
+ matchWait(web,"typeof document.getElementById('moreRules')?.onclick==='function'&&!document.body.hasAttribute('data-starting')");
+ String language=args.getString("language","tr");
+ matchJs(web,"localStorage.setItem('renkio-language',"+JSONObject.quote(language)+");location.reload()");
+ matchWait(web,"typeof document.getElementById('moreRules')?.onclick==='function'&&!document.body.hasAttribute('data-starting')");
+ matchJs(web,"document.querySelector('dialog[open]')?.close();document.querySelector('[data-page=more]').click();document.getElementById('moreRules').click()");
+ matchWait(web,"document.getElementById('guidedTutorial')?.open===true");captureMatch("tutorial-"+language+"-welcome.png");
+ matchJs(web,"document.querySelector('.tutorial-welcome button').click()");
+ for(int i=0;i<3;i++){
+  matchWait(web,"document.getElementById('guidedTutorial').dataset.phase==='select'&&document.querySelector('.tutorial-kicker').textContent.startsWith('"+(i+1)+"')");
+  matchJs(web,"document.querySelector('.tutorial-rack .tile:last-child').click()");if(!"true".equals(matchJs(web,"document.getElementById('guidedTutorial').dataset.phase==='select'")))throw new Exception("Wrong tile advanced lesson");
+
+  if(!"true".equals(matchJs(web,"(()=>{const d=document.getElementById('guidedTutorial'),b=d.querySelector('.tutorial-play').getBoundingClientRect(),r=d.getBoundingClientRect();return d.scrollWidth<=d.clientWidth&&b.bottom<=r.bottom&&b.left>=r.left&&b.right<=r.right})()")))throw new Exception("Tutorial controls overflow phone");
+  matchJs(web,"document.querySelector('.tutorial-choice').click()");captureMatch("tutorial-"+language+"-step"+(i+1)+".png");matchJs(web,"document.querySelector('.tutorial-target').click()");matchWait(web,"document.getElementById('guidedTutorial').dataset.phase==='review'");matchJs(web,"document.querySelector('.tutorial-play').click()");
+ }
+ matchWait(web,"document.getElementById('guidedTutorial').dataset.phase==='complete'");Thread.sleep(650);captureMatch("tutorial-"+language+"-complete.png");
+ matchJs(web,"document.querySelector('.tutorial-play').click()");matchWait(web,"!document.getElementById('guidedTutorial').open");
+ matchJs(web,"document.getElementById('moreRules').click();document.querySelector('.tutorial-skip').click()");matchWait(web,"!document.getElementById('guidedTutorial').open");
+ matchJs(web,"localStorage.setItem('renkio-language','tr')");
+ result.putString("result","PASS: three legal guided moves, wrong-choice guard, scripted bot, completion, manual replay and skip fit Android WebView; "+language+" "+matchJs(web,"innerWidth+'x'+innerHeight"));finish(Activity.RESULT_OK,result);
+ }catch(Exception e){result.putString("error",e.toString());finish(Activity.RESULT_CANCELED,result);}}
+
+ @Override public void onStart(){if("tutorial".equals(args.getString("mode"))){tutorialSmoke();return;}if("startup".equals(args.getString("mode"))){startupSmoke();return;}if("back".equals(args.getString("mode"))){backSmoke();return;}if("identity-before".equals(args.getString("mode"))){identitySmoke(true);return;}if("identity-after".equals(args.getString("mode"))){identitySmoke(false);return;}if("push".equals(args.getString("mode"))){PushSmoke.run(this);return;}if("offline".equals(args.getString("mode"))){super.onStart();return;}if("match".equals(args.getString("mode"))){matchSmoke();return;}Bundle result=new Bundle();try{
   Activity activity=startActivitySync(getTargetContext().getPackageManager().getLaunchIntentForPackage("com.renkio.game"));
   WebView web=findWebView(activity.getWindow().getDecorView());
   boolean loaded=false;for(int i=0;i<60;i++){
