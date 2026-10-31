@@ -83,3 +83,5 @@ Object.assign(EN,{'Elma fırlatmak için çek ve bırak':'Pull and release to th
 Object.assign(EN,{'Hediye':'Gift','Elmas':'Gems'});
 
 Object.assign(EN,{'Rehberli oyun':'Guided game','Eğitimi ana menüden başlatabilirsin.':'Start the tutorial from the home screen.'});
+
+Object.assign(EN,{'Sıra sende':'Your turn','Sıra rakipte':'Opponent’s turn','Bekleniyor':'Waiting','Oyun bitti':'Game over'});
