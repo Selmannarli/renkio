@@ -56,3 +56,5 @@ body[data-theme=day]:is([data-page=messages],[data-page=friends]){--surface:#fff
 .message-delivery{display:block;opacity:.6;font-size:11px}.message-retry{font:inherit;font-size:12px;border:0;border-radius:8px;padding:5px 9px;background:#703b65;color:white}
 
 .open-game-turn{display:grid;place-items:center;flex:0 0 38px;width:38px;height:38px;border-radius:50%;margin-left:auto}.open-game-turn .icon{width:21px;height:21px}.open-game-turn.is-own{color:#6ff4aa;background:#1cb86b25;border:1px solid #49db8c66}.open-game-turn.is-rival{color:#ffcf60;background:#edb02c20;border:1px solid #edb02c55}[data-theme=day] .open-game-turn.is-own{color:#12733e;background:#e0f6e9;border-color:#9edbb5}[data-theme=day] .open-game-turn.is-rival{color:#946000;background:#fff2cd;border-color:#ead08a}
+
+#turnPill{display:none!important}.syncing-move #commit{opacity:.72}.syncing-move .board-area{transition:box-shadow .2s}
