@@ -52,3 +52,5 @@ body[data-theme=day] #directConversation{background:#fff}body[data-theme=day] .d
 @media(max-width:540px){body[data-page=messages]:has(#directInput:focus){--social-bottom:env(safe-area-inset-bottom)}body[data-page=messages]:has(#directInput:focus) .bottom-nav{display:none}}
 
 body[data-theme=day]:is([data-page=messages],[data-page=friends]){--surface:#fff;--ink:#352a49;--muted:#776684;--line:#dfd4ec;--bg:#f7f4ff;color:var(--ink)!important}
+
+.message-delivery{display:block;opacity:.6;font-size:11px}.message-retry{font:inherit;font-size:12px;border:0;border-radius:8px;padding:5px 9px;background:#703b65;color:white}

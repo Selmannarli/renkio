@@ -3,7 +3,7 @@ export const conversationKey=(a,b)=>[String(a),String(b)].sort().join(':');
 export function migrateRoomMessages(state,rooms){
  state.directMessages??=[];const seen=new Set(state.directMessages.map(m=>m.receipt));let added=0;
  for(const r of rooms){if(r.seats.length!==2||r.seats.some(s=>!s.playerId||s.bot))continue;
-  for(const m of r.messages||[]){const from=r.seats[m.seat]?.playerId,to=r.seats[1-m.seat]?.playerId,receipt=r.code+':'+m.id;if(!from||!to||seen.has(receipt))continue;state.directMessages.push({id:receipt,receipt,thread:conversationKey(from,to),from,to,text:m.text,at:m.at});seen.add(receipt);added++}
+  for(const m of r.messages||[]){const from=r.seats[m.seat]?.playerId,to=r.seats[1-m.seat]?.playerId,receipt=m.receipt||r.code+':'+m.id;if(!from||!to||seen.has(receipt))continue;state.directMessages.push({id:receipt,receipt,thread:conversationKey(from,to),from,to,text:m.text,at:m.at});seen.add(receipt);added++}
  }return added;
 }
 export function recordGiftMessage(state,from,to,event){
