@@ -31,7 +31,7 @@ export function buySupport(profile,item,receipt){
 export function consumeSupport(profile,item,receipt){
  itemCheck(item);const e=economy(profile);if(receipt&&receiptCheck(e,receipt,item,'use'))return rewardView(profile);
  if(!e.inventory[item])throw Error('Bu desteğin kalmamış. Mağazadan alabilirsin.');
- e.inventory[item]--;if(receipt)remember(e,receipt,item,'use');return rewardView(profile);
+ if(!(e.unlimited&&item==='joker'))e.inventory[item]--;if(receipt)remember(e,receipt,item,'use');return rewardView(profile);
 }
 export function prepareJoker(game,actor,id){
  if(!game.experimental||game.over||game.players[actor]?.eliminated)throw Error('Bu maçta joker kullanılamıyor.');
