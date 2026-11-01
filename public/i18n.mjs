@@ -85,3 +85,5 @@ Object.assign(EN,{'Hediye':'Gift','Elmas':'Gems'});
 Object.assign(EN,{'Rehberli oyun':'Guided game','Eğitimi ana menüden başlatabilirsin.':'Start the tutorial from the home screen.'});
 
 Object.assign(EN,{'Sıra sende':'Your turn','Sıra rakipte':'Opponent’s turn','Bekleniyor':'Waiting','Oyun bitti':'Game over'});
+
+Object.assign(EN,{'Hesap bağlantısı zaman aşımına uğradı. Lütfen yeniden dene.':'Account connection timed out. Please try again.'});

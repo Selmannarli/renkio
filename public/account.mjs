@@ -1,9 +1,10 @@
+import {SingleFlight} from './network.mjs';
 import {initializeApp,getAuth,signInWithCustomToken,signInAnonymously,onAuthStateChanged,signInWithEmailAndPassword,EmailAuthProvider,linkWithCredential,signInWithCredential,GoogleAuthProvider,updateProfile,signOut,sendPasswordResetEmail,reauthenticateWithCredential} from './firebase.mjs';
 import {firebaseConfig} from './firebase-config.mjs';
 try{const transfer=JSON.parse(window.RenkioNative?.legacyIdentity?.()||'null');for(const [key,value]of Object.entries(transfer?.storage||{}))if(key.startsWith('renkio-')&&typeof value==='string'&&localStorage.getItem(key)===null)localStorage.setItem(key,value)}catch{}
 const auth=getAuth(initializeApp(firebaseConfig));auth.languageCode='tr';
 let changed=()=>{},known=null,guestPending=null;
-let restorePending=null;
+const identityRestoration=new SingleFlight();
 // Existing browser/WebView installations keep their own previous Firebase identity.
 async function previousBrowserIdentity(){
  if(!globalThis.indexedDB)return null;
@@ -15,9 +16,9 @@ async function previousBrowserIdentity(){
 }
 async function restoreIdentity(){
  await auth.authStateReady();if(auth.currentUser)return;
- restorePending??=(async()=>{let legacy=null;try{legacy=JSON.parse(window.RenkioNative?.legacyIdentity?.()||'null')}catch{}
+ await identityRestoration.run('legacy',async()=>{let legacy=null;try{legacy=JSON.parse(window.RenkioNative?.legacyIdentity?.()||'null')}catch{}
  legacy??=await previousBrowserIdentity();if(!legacy)return;const r=await fetch('/api/auth/upgrade',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({refreshToken:legacy.refreshToken}),signal:AbortSignal.timeout(20000)});if(!r.ok)throw Error('Önceki hesabın aktarımı tamamlanamadı. İnternet bağlantını kontrol edip yeniden aç.');
- const {token}=await r.json();await signInWithCustomToken(auth,token);window.RenkioNative?.identityRestored?.();})();await restorePending;
+ const {token}=await r.json();await signInWithCustomToken(auth,token);window.RenkioNative?.identityRestored?.();});
 }
 const tags=new Map();
 const read=()=>{try{return JSON.parse(localStorage.getItem('renkio-profile'))}catch{return null}};
