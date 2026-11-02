@@ -23,3 +23,9 @@ export function giftLabel(m,translate=x=>x){return m.kind==='gift'?m.gift.amount
 
 // Board/history change with revision; cosmetic packets need not serialize them again.
 export function gameRenderKey(g){return g?JSON.stringify([g.matchId,g.revision,g.turn,g.turnSerial,g.over,g.turnSeconds,g.turnDeadline,g.timeSupportUsed,g.timeoutCounts,g.timeoutDecision,g.players,g.celebration,g.bagCount]):''}
+
+// A server echo and its optimistic row describe one event, not two balloons.
+export class TransientEvents {
+ constructor(){this.scopes=new Map()}
+ messages(scope,messages,baseline=false){const first=!this.scopes.has(scope),seen=this.scopes.get(scope)||new Set(),fresh=[];for(const m of messages){const id=m.receipt||m.id;if(!seen.has(id)&&!first&&!baseline)fresh.push(m);seen.add(id)}this.scopes.set(scope,new Set([...seen].slice(-256)));while(this.scopes.size>40)this.scopes.delete(this.scopes.keys().next().value);return fresh}
+}
