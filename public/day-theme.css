@@ -1,0 +1,42 @@
+/* Day palette: warm white cards, lavender canvas, dark plum typography. */
+body[data-theme=day]{color-scheme:light;--bg:#f5f1fb;--surface:#fffefd;--ink:#342542;--muted:#675774;--readable:#675774;--line:#d6c9e3;--violet:#7844bb;--violet-dark:#583082;--lilac:#e9def7;--board:#eae2f3;--grid-color:#8b729e65;--shadow:#63488018;background:#f5f1fb!important;color:#342542!important}
+body[data-theme=day] :is(.home-screen,.game-screen,.hub-page,.nav-page){color:var(--ink)}
+body[data-theme=day] :is(dialog,.avatar-dialog,.profile-dialog,.join-panel,.open-games-section,.match-archive,.home-archive,.conversation-empty,.home-table-card,.my-table-card){background:#fffefd!important;border-color:#d6c9e3!important;color:#342542!important;box-shadow:0 8px 28px #5534760d!important}
+body[data-theme=day] :is(h1,h2,h3,.drawer-heading,.page-heading,.friend-name,.conversation-name,.profile-name,.profile-stats b,.accessory-heading,.avatar-character-name,.setting-row b){color:#342542!important}
+body[data-theme=day] :is(.text-button,.icon-button,.help-trigger,.my-table-heading button,.profile-links .text-button){color:#67408b!important;opacity:1!important}
+body[data-theme=day] :is(.icon-button,.help-trigger,.soft-button){background:#eee5f7!important;border-color:#cbb8df!important}
+body[data-theme=day] :is(input:not([type=checkbox]),select,textarea){color:#342542!important;background:#fcfaff!important;border-color:#c7b5da!important}
+body[data-theme=day] :is(input,textarea)::placeholder{color:#756080!important;opacity:1}
+body[data-theme=day] .profile-banner{background:linear-gradient(115deg,#efe4fa,#fffefd)!important;border-color:#d6c9e3!important}
+body[data-theme=day] .profile-banner #name{background:transparent!important;color:#442659!important}
+body[data-theme=day] :is(.join-label,.join-heading,.join-panel label,.page-heading p,.reward-copy p,.saved-match small,.friend-name small,.profile-dialog small,.history-empty,.history-row small,.conversation-preview,.conversation-time,.friend-status,.setting-row small){color:#675774!important;opacity:1!important}
+body[data-theme=day] :is(.bottom-nav,.game-topline,.chat-header,.direct-header){background:#fffefd!important;border-color:#d6c9e3!important;color:#342542!important}
+body[data-theme=day] .bottom-nav button{color:#715e7f!important;opacity:1!important}
+body[data-theme=day] .bottom-nav button[aria-current=page]{color:#7237b0!important;background:#eee2fa!important}
+body[data-theme=day] .daily-reward{background:linear-gradient(115deg,#ecdefa,#fff5e8)!important;border-color:#d2b9e8!important;color:#442b5b!important}
+body[data-theme=day] .daily-reward :is(h2,b,.reward-copy p,.reward-day b){color:#442b5b!important}
+body[data-theme=day] .reward-wallet{background:#fff7e2!important;color:#65440f!important;border-color:#d9be7e!important}
+body[data-theme=day] :is(.button-sun,#join,#claimReward){background:#7740b5!important;border-color:#653098!important;color:#fff!important}
+body[data-theme=day] :is(.button-purple,.period-tabs button,.mode-switch button){background:#e9ddf6!important;color:#563071!important;border-color:#cdb6df!important}
+body[data-theme=day] :is(.period-tabs button[aria-pressed=true],.mode-switch button[aria-selected=true]){background:#7740b5!important;color:#fff!important}
+body[data-theme=day] :is(.friend-entry,.conversation-row,.leader-row,.saved-match,.history-row){color:#342542!important;border-color:#ddd0e7!important}
+body[data-theme=day] :is(.conversation-row,.saved-match,.leader-row){background:#f5effa!important}
+body[data-theme=day] .board-area{background:#eae2f3!important;border-color:#c5aed7!important;--grid-color:#8b729e65}
+body[data-theme=day] .hand-panel{background:#fffefd!important;border-color:#c5aed7!important}
+body[data-theme=day] .player-card{background:#f1e8f8!important;border-color:#cdb9dd!important;color:#342542!important}
+body[data-theme=day] .player-card.active{background:#d9f0df!important;border-color:#3a9562!important;color:#174e32!important}
+body[data-theme=day] .player-card :is(.player-name,.player-score){color:inherit!important}
+body[data-theme=day] :is(.board-tools,.bag-pill,.support-menu,.support-item,.quick-message){background:#fffafeeF!important;color:#573475!important;border-color:#c7afd9!important}
+body[data-theme=day] .board-status{background:transparent!important;color:#573475!important}
+body[data-theme=day] .hand-panel .minor-actions>:is(#undo,#shuffle,#exchange,#pass,#bagButton){background:#ede2f7!important;color:#563171!important;border-color:#bfa1d2!important}
+body[data-theme=day] #commit{background:#238253!important;border-color:#1a6841!important;color:#fff!important}
+body[data-theme=day] #commit.waiting{background:#f2cc68!important;border-color:#cba33c!important;color:#62420c!important}
+body[data-theme=day] :is(.chat-message,.direct-message){background:#e9e0f3!important;color:#342542!important}
+body[data-theme=day] :is(.chat-message.own,.direct-message.own){background:#7442aa!important;color:#fff!important}
+body[data-theme=day] :is(.chat-message,.direct-message) :is(small,time,.message-delivery){color:inherit!important;opacity:.8}
+body[data-theme=day] :is(#directConversation,#directMessages,#chatMessages,.chat-panel){background:#f8f4fc!important;color:#342542!important}
+body[data-theme=day] .avatar-dialog :is(.accessory-item,.animation-choice,.avatar-option){color:#4e3067!important;background:#f3ebfa!important;border-color:#cdb5df!important}
+body[data-theme=day] .avatar-dialog :is(.accessory-item,.animation-choice,.avatar-option)[aria-pressed=true]{background:#e5d1f5!important;border-color:#8549b5!important}
+body[data-theme=day] .avatar-dialog :is(.accessory-price,.avatar-wallet,.accessory-item>small){color:#65427d!important;opacity:1!important}
+body[data-theme=day] .tutorial-card{background:#fffefd!important;color:#342542!important;border-color:#c7afd9!important}
+body[data-theme=day] button:disabled{opacity:.55}

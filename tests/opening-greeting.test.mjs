@@ -1,0 +1,3 @@
+import test from 'node:test';import assert from 'node:assert/strict';import {openingLabel} from '../public/startup.mjs';
+test('only player tag 48284 receives the personal greeting in either opening state',()=>{for(const state of ['loading','updating'])for(const english of [true,false])assert.equal(openingLabel(state,english,{tag:'48284'}),'Merhabalar Kuvars');assert.equal(openingLabel('updating',false,{tag:48284}),'Merhabalar Kuvars')});
+test('other accounts and matching nicknames retain ordinary opening messages',()=>{for(const profile of [null,{tag:'19432'},{tag:'33475'},{name:'Player 48284'},{name:'Kuvars'},{}]){assert.equal(openingLabel('updating',false,profile),'Güncelleniyor…');assert.equal(openingLabel('loading',true,profile),'Loading…')}});
