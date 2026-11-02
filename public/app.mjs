@@ -4,7 +4,7 @@ import {prepareMatchAccount} from './account-preparation.mjs';
 import {tutorialCanOffer} from './tutorial.mjs';
 import {GuidedTutorial} from './tutorial-ui.mjs';
 import {SingleFlight,READ_ROUTES,requestApiJson} from './network.mjs';
-import {opening} from './startup.mjs';
+import {opening,settleWithin} from './startup.mjs';
 import {TransientEvents,acceptRoomSnapshot,gameRenderKey,ChatReadState,roomChatKey,directChatKey,giftLabel} from './live-state.mjs';
 import {AppleGame} from './apple-game.mjs';
 import {accessoryById,MIKO_AVATAR} from './character-style.mjs';
@@ -478,7 +478,8 @@ for(const [button,input] of [[$('commit'),$('chatInput')],[$('sendChat'),$('chat
 setInterval(async()=>{if(document.hidden||document.body.dataset.page!=='messages'||!directPeer||directPolling)return;const id=directPeer,request=directRequest;directPolling=true;try{const v=await api('messages',{accountToken:await accounts.accountToken(),playerId:id});if(request===directRequest){const old=new Set(directRows.map(m=>m.id));if(v.messages.some(m=>!old.has(m.id))){directRows=[...directRows.filter(m=>!v.messages.some(n=>n.id===m.id)),...v.messages];drawDirect()}}}catch{}finally{directPolling=false}},3000);
 
 // Existing Android shells can also check and activate safely once per launch.
-opening.start((async()=>{if(navigator.onLine){let deadline;await Promise.race([(async()=>{await initialAccount;await homePreparation})(),new Promise(resolve=>{deadline=setTimeout(resolve,20000)})]).finally(()=>clearTimeout(deadline))}await Promise.allSettled([waitForCharacters(),document.fonts?.ready])})());
+// Account, social data and update downloads continue independently of the usable shell.
+opening.start(settleWithin(Promise.allSettled([waitForCharacters(),document.fonts?.ready]),1500));
 if(window.RenkioNative?.enableNotifications&&!nativePushState()?.asked&&!read('renkio-notification-asked')&&preferences.alerts){save('renkio-notification-asked',true);window.RenkioNative.enableNotifications()}
 
 function lastOnline(at){if(!at)return t('Son görülme bilgisi yok');const seconds=Math.max(0,(Date.now()-at)/1000);if(seconds<45)return t('Çevrim içi');if(seconds<60)return t('Az önce');const [value,unit]=seconds<3600?[Math.floor(seconds/60),'minute']:seconds<86400?[Math.floor(seconds/3600),'hour']:[Math.floor(seconds/86400),'day'];return t('Son görülme')+': '+new Intl.RelativeTimeFormat(locale(),{numeric:'always'}).format(-value,unit)}

@@ -23,6 +23,8 @@ async function restoreIdentity(){
 const tags=new Map();
 const read=()=>{try{return JSON.parse(localStorage.getItem('renkio-profile'))}catch{return null}};
 export let profile=read();
+// Player tags are stable; restoring a known account must not wait for a profile round trip.
+if(profile?.id&&profile.tag)tags.set(profile.id,profile.tag);
 export function watchProfile(fn){changed=fn;fn(profile)}
 export async function idFor(uid){const bytes=new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(uid)));const hex=[...bytes.slice(0,8)].map(n=>n.toString(16).padStart(2,'0')).join('');return (BigInt('0x'+hex)%800000000000n+100000000000n).toString()}
 async function publish(user){if(!user)return;const claims=(await user.getIdTokenResult()).claims,restoredGuest=!!claims.renkioGuest&&!user.email&&!user.providerData.length;const id=await idFor(user.uid);let tag=tags.get(id)||((profile?.id===id&&profile.tag)||null);if(!tags.has(id))try{const r=await fetch('/api/profile',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({accountToken:await user.getIdToken()}),signal:AbortSignal.timeout(12000)});if(r.ok){tag=(await r.json()).tag;tags.set(id,tag)}}catch{}const next={id,tag,name:user.displayName&&!/^Player \d{12}$/.test(user.displayName)?user.displayName:'Player '+(tag||'…'),guest:user.isAnonymous||restoredGuest,email:user.email||'',photoURL:user.photoURL||''};if(known===user.uid&&profile&&['id','tag','name','guest','email','photoURL'].every(k=>profile[k]===next[k]))return;profile=next;known=user.uid;try{localStorage.setItem('renkio-profile',JSON.stringify(profile))}catch{}changed(profile)}
