@@ -1,9 +1,10 @@
+import {fixedNickname} from './public/identity-policy.mjs';
 import {createHash} from 'node:crypto';
 import {createRemoteJWKSet,jwtVerify} from 'jose';
 import {firebaseConfig,googleClientId} from './public/firebase-config.mjs';
 const keys=createRemoteJWKSet(new URL('https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com'));
 export function playerId(uid){return (BigInt('0x'+createHash('sha256').update(uid).digest('hex').slice(0,16))%800000000000n+100000000000n).toString()}
-export function publicProfile(user){const id=playerId(user.uid);return {id,name:user.name?.trim().slice(0,24)||'Player '+id,guest:user.guest}}
+export function publicProfile(user){const id=playerId(user.uid);return {id,name:fixedNickname(id)||user.name?.trim().slice(0,24)||'Player '+id,guest:user.guest}}
 export async function verifyAccount(token){
  if(typeof token!=='string'||token.length>8192)throw Error('Hesabına yeniden giriş yap.');
  try{let p;const projects=[firebaseConfig.projectId,...(process.env.RENKIO_LEGACY_AUTH_PROJECT?[process.env.RENKIO_LEGACY_AUTH_PROJECT]:[])];for(const project of projects){try{({payload:p}=await jwtVerify(token,keys,{clockTolerance:30,algorithms:['RS256'],audience:project,issuer:'https://securetoken.google.com/'+project}));break}catch{}}if(!p)throw Error();
