@@ -1,3 +1,4 @@
+import {opening} from './startup.mjs';
 import {celebrationLocked} from './engine.mjs';
 import {HERO_TIMING} from './character-style.mjs';
 import {t} from './i18n.mjs';
@@ -7,7 +8,7 @@ const requests=new WeakMap();
 const reduced=()=>document.body?.dataset.motion==='reduced'||matchMedia('(prefers-reduced-motion: reduce)').matches;
 async function portraitRuntime(){
  if(portraits)return portraits;
- if(!loading)loading=import('./table-engine.mjs').then(({CharacterPortraits})=>portraits=new CharacterPortraits({reduced})).catch(error=>{for(const art of document.querySelectorAll('.character-art'))art.dataset.modelState='unavailable';console.warn('Character renderer unavailable',error.message);return null});return loading;
+ if(!loading)loading=Promise.resolve(opening?.finished).then(()=>import('./table-engine.mjs')).then(({CharacterPortraits})=>portraits=new CharacterPortraits({reduced})).catch(error=>{for(const art of document.querySelectorAll('.character-art'))art.dataset.modelState='unavailable';console.warn('Character renderer unavailable',error.message);return null});return loading;
 }
 export async function waitForCharacters(){await portraitRuntime();await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))}
 export function characterHasVoice(mood){return ['hello','win','lose','draw','celebrate','impact','angry','surprise'].includes(mood)||typeof mood==='string'&&mood.startsWith('greet')}

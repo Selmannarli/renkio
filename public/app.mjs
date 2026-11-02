@@ -11,7 +11,7 @@ import {accessoryById,MIKO_AVATAR} from './character-style.mjs';
 import {extendTurn} from './time-support.mjs';
 import {t,installLanguage,locale} from './i18n.mjs';
 import {renderTable,updateTableRound} from './table.mjs';
-import {installCharacterMotion,waitForCharacters,playCharacter,reactToGame,gameOutcomes,scoreStripKey,updateWaitingCharacters,cancelCharacterVisit,characterVisitActive} from './motion.mjs';
+import {installCharacterMotion,playCharacter,reactToGame,gameOutcomes,scoreStripKey,updateWaitingCharacters,cancelCharacterVisit,characterVisitActive} from './motion.mjs';
 import {syncPush,removePush,nativePushState} from './push-client.mjs';
 import {botThinkDelay,practiceAvailable,practiceSnapshot,restorePractice} from './practice.mjs';
 import {GameFeel,moveEnergy,movePower} from './game-feel.mjs';
@@ -479,7 +479,7 @@ setInterval(async()=>{if(document.hidden||document.body.dataset.page!=='messages
 
 // Existing Android shells can also check and activate safely once per launch.
 // Account, social data and update downloads continue independently of the usable shell.
-opening.start(settleWithin(Promise.allSettled([waitForCharacters(),document.fonts?.ready]),1500));
+opening.start(settleWithin(document.fonts?.ready,400));
 if(window.RenkioNative?.enableNotifications&&!nativePushState()?.asked&&!read('renkio-notification-asked')&&preferences.alerts){save('renkio-notification-asked',true);window.RenkioNative.enableNotifications()}
 
 function lastOnline(at){if(!at)return t('Son görülme bilgisi yok');const seconds=Math.max(0,(Date.now()-at)/1000);if(seconds<45)return t('Çevrim içi');if(seconds<60)return t('Az önce');const [value,unit]=seconds<3600?[Math.floor(seconds/60),'minute']:seconds<86400?[Math.floor(seconds/3600),'hour']:[Math.floor(seconds/86400),'day'];return t('Son görülme')+': '+new Intl.RelativeTimeFormat(locale(),{numeric:'always'}).format(-value,unit)}

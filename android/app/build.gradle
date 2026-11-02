@@ -4,7 +4,7 @@ def releaseStore = System.getenv('RENKIO_STORE_FILE')
 android {
  namespace 'com.renkio.game'
  compileSdk 36
- defaultConfig { applicationId 'com.renkio.game'; minSdk 26; targetSdk 36; versionCode 11300; versionName '1.13.0'; testInstrumentationRunner 'com.renkio.game.CrossplaySmoke' }
+ defaultConfig { applicationId 'com.renkio.game'; minSdk 26; targetSdk 36; versionCode 11301; versionName '1.13.1'; testInstrumentationRunner 'com.renkio.game.CrossplaySmoke' }
  compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
  buildFeatures { buildConfig true }
  signingConfigs {

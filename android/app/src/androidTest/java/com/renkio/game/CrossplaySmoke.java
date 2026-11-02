@@ -26,10 +26,10 @@ public class CrossplaySmoke extends OfflineSmoke {
    List<JSONObject> group=new ArrayList<>();Set<String> seen=new HashSet<>();for(int i=0;i<hand.length();i++){JSONObject t=hand.getJSONObject(i);String k=t.getInt("c")+":"+t.getInt("s");if(t.getInt(attr)==n&&seen.add(k))group.add(t);}if(group.size()>best.size())best=group;
   }JSONArray result=new JSONArray();for(int i=0;i<best.size();i++)result.put(new JSONObject().put("id",best.get(i).getString("id")).put("x",i).put("y",0));return result;
  }
- private void startupSmoke(){Bundle result=new Bundle();try{
+ private void startupSmoke(){Bundle result=new Bundle();long startupBegan=android.os.SystemClock.elapsedRealtime();try{
  Activity a=startActivitySync(getTargetContext().getPackageManager().getLaunchIntentForPackage("com.renkio.game"));WebView web=findWebView(a.getWindow().getDecorView());boolean saw=false,ready=false;
  for(int i=0;i<1000;i++){try{boolean opening="true".equals(matchJs(web,"!!document.getElementById('startupScreen')&&!document.getElementById('startupScreen').classList.contains('startup-leaving')"));if(opening&&!saw){Bundle stage=new Bundle();stage.putString("stage","opening visible");sendStatus(1,stage);}saw|=opening;if(saw&&"true".equals(matchJs(web,"!document.body.hasAttribute('data-starting')&&typeof document.getElementById('create')?.onclick==='function'"))){if("true".equals(matchJs(web,"document.getElementById('toast')?.textContent.includes('Güncelsin.')===true")))throw new Exception("Unexpected success toast");ready=true;break;}}catch(Exception sampling){if(!"WebView timeout".equals(sampling.getMessage()))throw sampling;}Thread.sleep(100);}
- if(!saw||!ready)throw new Exception("Opening did not transition to ready game");
+ if(!saw||!ready)throw new Exception("Opening did not transition to ready game");long elapsed=android.os.SystemClock.elapsedRealtime()-startupBegan;if(elapsed>12000)throw new Exception("Opening exceeded 12 seconds: "+elapsed);result.putLong("startupMs",elapsed);
  result.putString("result","PASS: installed Android showed opening screen, completed preparation/update handshake, revealed ready game and did not show up-to-date toast");finish(Activity.RESULT_OK,result);
  }catch(Exception e){result.putString("error",e.toString());finish(Activity.RESULT_CANCELED,result);}}
  private void backSmoke(){Bundle result=new Bundle();try{
