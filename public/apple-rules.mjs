@@ -1,4 +1,4 @@
-// Throws never change the board, score or racks; short timed matches grant the active rival one second.
+// Throws never change the board, score or racks; short timed matches grant the active rival five seconds on a hit.
 export const APPLE_GRAVITY=5,APPLE_COOLDOWN=3200;
 export function appleOrder(game){return game.players.map((p,seat)=>({seat,score:p.score||0})).filter(p=>!game.players[p.seat].eliminated).sort((a,b)=>b.score-a.score||a.seat-b.seat).map(p=>p.seat)}
 export function canThrowApple(game,seat,now=Date.now()){return !!(game&&!game.over&&!game.timeoutDecision&&Number.isInteger(seat)&&game.players?.[seat]&&!game.players[seat].eliminated&&game.turn!==seat&&!(game.celebration&&!game.celebration.released&&now<game.celebration.until))}
@@ -15,6 +15,6 @@ export function recordApple(room,seat,input,now=Date.now()){
  if(!canThrowApple(room.game,seat,now)||room.game.turnDeadline&&room.game.turnDeadline<=now)throw Error('Elmayı sıranı beklerken fırlatabilirsin.');
  const last=(room.appleThrows||[]).filter(s=>s.seat===seat).at(-1);if(last&&now-last.at<APPLE_COOLDOWN)throw Error('Biraz bekle.');
  const shot={...appleFlight(room.game,seat,input.vx,input.vy),seat,id:input.receipt,at:now,turn:room.game.turn,serial:room.game.turnSerial||room.game.history?.length||0,matchId:room.game.matchId};
- if([30,60,120].includes(room.game.turnSeconds)&&Number.isFinite(room.game.turnDeadline)&&room.game.turnDeadline>now){room.game.turnDeadline+=1000;shot.extraSeconds=1}
+ if(shot.hit===room.game.turn&&[30,60,120].includes(room.game.turnSeconds)&&Number.isFinite(room.game.turnDeadline)&&room.game.turnDeadline>now){room.game.turnDeadline+=5000;shot.extraSeconds=5}
  room.appleThrows=[...(room.appleThrows||[]),shot].slice(-16);return shot;
 }
