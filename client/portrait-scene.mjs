@@ -1,3 +1,4 @@
+import {portraitFrame} from './portrait-framing.mjs';
 import {resolveAnimationMood,normalizeAnimationPreferences} from '../public/animation-style.mjs';
 import {applyCharacterTouch,TOUCH_DURATIONS} from './character-touch.mjs';
 import * as T from 'three';
@@ -39,7 +40,7 @@ export class CharacterPortraits{
  }
  model(face,colour,accessory='none',colours=''){
   const key=face+':'+colour+':'+accessory+':'+accessoryColourKey(colours);let entry=this.models.get(key);if(entry){this.models.delete(key);this.models.set(key,entry);return entry}
-  const root=createCharacter(face,colour,'standing',accessory,colours);root.updateMatrixWorld(true);const bounds=new T.Box3().setFromObject(root),center=bounds.getCenter(new T.Vector3()),size=bounds.getSize(new T.Vector3());const headBounds=new T.Box3().setFromObject(root.userData.rig.head),headCenter=headBounds.getCenter(new T.Vector3()),headSize=headBounds.getSize(new T.Vector3());headCenter.y-=.04;entry={root,center,radius:Math.max(size.y,size.x)*.5,headCenter,headRadius:Math.max(headSize.y*1.08,headSize.x)*.5,accessories:new Map()};
+  const root=createCharacter(face,colour,'standing',accessory,colours);root.updateMatrixWorld(true);const frame=portraitFrame(root),{center,headCenter}=frame;entry={root,...frame,accessories:new Map()};
   root.traverse(node=>{if(!node.userData.attachment)return;const box=new T.Box3().setFromObject(node),extent=box.getSize(new T.Vector3());entry.accessories.set(node.userData.attachment,{center:box.getCenter(new T.Vector3()),radius:Math.max(extent.x,extent.y,extent.z)*.5})});
   const camera=new T.PerspectiveCamera(31,1,.1,30);camera.position.copy(center).add(new T.Vector3(.18,.12,1).normalize().multiplyScalar(entry.radius/Math.sin(camera.fov*Math.PI/360)*1.14));camera.lookAt(center);camera.updateMatrixWorld(true);entry.fullHead=headCenter.clone().project(camera);this.models.set(key,entry);
   while(this.models.size>12){const oldest=this.models.keys().next().value,old=this.models.get(oldest);this.models.delete(oldest);disposePerson(old.root)}return entry;
@@ -60,7 +61,7 @@ export class CharacterPortraits{
    const touching=r.touch&&(now<r.touch.until||now-r.touch.start<(TOUCH_DURATIONS[r.touch.kind]||0)||Math.abs(r.touch.sx)+Math.abs(r.touch.sy)+Math.abs(r.touch.yaw-r.touch.syaw)>.002);
    const idle=!!art.closest('#scores,.home-portrait,.avatar-preview,#winnerPortrait'),active=r.mood!=='idle',animate=!!touching||!reduced&&(idle||active);alive||=animate;
    if(!r.dirty&&!this.dirty&&(!animate||now-r.last<(active?15:32)))continue;
-   const pixels=Math.max(64,Math.min(384,Math.ceil(Math.max(rect.width,rect.height)*Math.min(devicePixelRatio||1,1.5))));
+   const overscan=art.closest('#scores')?1.35:1,basePixels=Math.max(48,Math.min(Math.floor(384/overscan),Math.ceil(Math.max(rect.width,rect.height)*Math.min(devicePixelRatio||1,1.5)))),pixels=Math.round(basePixels*overscan);r.canvas.classList.toggle('portrait-overscan',overscan>1);
    if(r.canvas.width!==pixels||r.canvas.height!==pixels){r.canvas.width=r.canvas.height=pixels}
    const entry=this.model(r.face,r.colour,r.accessory,r.colours),root=entry.root,preview=entry.accessories.get(art.dataset.accessoryPreview),bust=!preview&&!!art.closest('#scores,.home-portrait,.friend-entry,.leader-row,.mini-player'),center=preview?.center||(bust?entry.headCenter:entry.center),radius=preview?.radius||(bust?entry.headRadius:entry.radius);
    let previous=null;if(r.transition&&!reduced&&now-r.transition.at<(r.transition.duration||240)){if(r.transition.pose)previous=r.transition.pose;else{animateCharacter(root,{time:now/1000+r.phase,face:r.face,mood:r.transition.mood,elapsed:Math.max(0,(now-r.transition.start)/1000)});previous=captureCharacterPose(root)}}else r.transition=null;
@@ -76,10 +77,10 @@ export class CharacterPortraits{
    if(r.touch){r.touch.syaw+=(r.touch.yaw-r.touch.syaw)*(1-Math.exp(-Math.min(64,Math.max(1,now-r.last))/110));root.rotation.y+=r.touch.syaw}
    art.dataset.fullFrameRatio=String(entry.radius/entry.headRadius);art.dataset.fullHeadX=String((entry.fullHead.x+1)/2);art.dataset.fullHeadY=String((1-entry.fullHead.y)/2);const camera=this.camera,hidden=[];
    if(preview)root.traverse(node=>{if(!node.isMesh||!node.visible)return;let part=false;for(let n=node;n;n=n.parent)if(n.userData.attachment===art.dataset.accessoryPreview){part=true;break}if(!part){node.visible=false;hidden.push(node)}});
-   this.scene.add(root);const distance=radius/Math.sin(this.camera.fov*Math.PI/360)*1.14;this.camera.position.copy(center).add(new T.Vector3(.18,.12,1).normalize().multiplyScalar(distance));this.camera.lookAt(center);this.renderer.setScissorTest(true);this.renderer.setScissor(0,0,pixels,pixels);this.renderer.setViewport(0,0,pixels,pixels);this.renderer.render(this.scene,camera);r.ctx.globalCompositeOperation='copy';r.ctx.drawImage(this.renderer.domElement,0,384-pixels,pixels,pixels,0,0,pixels,pixels);this.scene.remove(root);for(const node of hidden)node.visible=true;
-   if(r.mood==='knock'){const point=characterContactPoint(root,camera);art.dataset.knockX=((point.x+1)*50).toFixed(1)+'%';art.dataset.knockY=((1-point.y)*50).toFixed(1)+'%'}
-   if(r.mood==='appleAim'||r.mood==='appleThrow'){const point=characterSocialContactPoint(root,r.mood,camera,-(Number(art.dataset.appleDirection)||1));if(point){art.dataset.appleHandX=String((point.x+1)/2);art.dataset.appleHandY=String((1-point.y)/2)}}
-   if(r.mood==='visitorStrike'||r.mood.startsWith('highFive')||r.mood.startsWith('playful')){const point=characterSocialContactPoint(root,r.mood,camera);if(point){art.dataset.contactX=String((point.x+1)/2);art.dataset.contactY=String((1-point.y)/2)}}
+   this.scene.add(root);const distance=radius/Math.sin(this.camera.fov*Math.PI/360)*1.14;this.camera.position.copy(center).add(new T.Vector3(.18,.12,1).normalize().multiplyScalar(distance));this.camera.lookAt(center);this.camera.clearViewOffset();if(overscan>1){const pad=(pixels-basePixels)/2;this.camera.setViewOffset(basePixels,basePixels,-pad,-pad,pixels,pixels)}this.renderer.setScissorTest(true);this.renderer.setScissor(0,0,pixels,pixels);this.renderer.setViewport(0,0,pixels,pixels);this.renderer.render(this.scene,camera);r.ctx.globalCompositeOperation='copy';r.ctx.drawImage(this.renderer.domElement,0,384-pixels,pixels,pixels,0,0,pixels,pixels);this.scene.remove(root);for(const node of hidden)node.visible=true;
+   if(r.mood==='knock'){const point=characterContactPoint(root,camera);point.x*=overscan;point.y*=overscan;art.dataset.knockX=((point.x+1)*50).toFixed(1)+'%';art.dataset.knockY=((1-point.y)*50).toFixed(1)+'%'}
+   if(r.mood==='appleAim'||r.mood==='appleThrow'){const point=characterSocialContactPoint(root,r.mood,camera,-(Number(art.dataset.appleDirection)||1));if(point){point.x*=overscan;point.y*=overscan;art.dataset.appleHandX=String((point.x+1)/2);art.dataset.appleHandY=String((1-point.y)/2)}}
+   if(r.mood==='visitorStrike'||r.mood.startsWith('highFive')||r.mood.startsWith('playful')){const point=characterSocialContactPoint(root,r.mood,camera);if(point){point.x*=overscan;point.y*=overscan;art.dataset.contactX=String((point.x+1)/2);art.dataset.contactY=String((1-point.y)/2)}}
    r.lastPose=captureCharacterPose(root,r.lastPose);r.last=now;r.dirty=false;if(!art.dataset.modelReady){art.dataset.modelReady='true';art.dataset.modelVersion=CHARACTER_MODEL_VERSION}
   }
   this.dirty=false;this.lastFrame=now;if(alive)this.request();

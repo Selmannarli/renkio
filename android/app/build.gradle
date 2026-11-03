@@ -4,7 +4,7 @@ def releaseStore = System.getenv('RENKIO_STORE_FILE')
 android {
  namespace 'com.renkio.game'
  compileSdk 36
- defaultConfig { applicationId 'com.renkio.game'; minSdk 26; targetSdk 36; versionCode 11301; versionName '1.13.1'; testInstrumentationRunner 'com.renkio.game.CrossplaySmoke' }
+ defaultConfig { applicationId 'com.renkio.game'; minSdk 26; targetSdk 36; versionCode 11400; versionName '1.14.0'; testInstrumentationRunner (project.findProperty('renkioQaRunner') ?: 'com.renkio.game.CrossplaySmoke') }
  compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
  buildFeatures { buildConfig true }
  signingConfigs {
@@ -28,6 +28,6 @@ tasks.register('bundleGameAssets', Sync) {
 }
 tasks.named('preBuild').configure { dependsOn 'bundleGameAssets' }
 
-dependencies { implementation platform('com.google.firebase:firebase-bom:35.1.0'); implementation 'com.google.firebase:firebase-messaging' }
+dependencies { implementation platform('com.google.firebase:firebase-bom:35.1.0'); implementation 'com.google.firebase:firebase-messaging'; implementation 'com.google.firebase:firebase-auth'; implementation 'androidx.credentials:credentials:1.3.0'; implementation 'androidx.credentials:credentials-play-services-auth:1.3.0'; implementation 'com.google.android.libraries.identity.googleid:googleid:1.1.1' }
 
 

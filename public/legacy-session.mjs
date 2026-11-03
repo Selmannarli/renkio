@@ -1,0 +1,11 @@
+import {firebaseConfig} from './firebase-config.mjs';
+export function storedSession(rows,pending=null){
+ const users=rows.filter(row=>row&&typeof row.uid==='string'&&typeof row.stsTokenManager?.refreshToken==='string');
+ const current=users.filter(row=>row.apiKey===firebaseConfig.apiKey).sort((a,b)=>Number(b.lastLoginAt||0)-Number(a.lastLoginAt||0))[0];
+ if(current)return {refreshToken:current.stsTokenManager.refreshToken};
+ if(pending?.refreshToken)return {legacyRefreshToken:pending.refreshToken};
+ const old=users.filter(row=>row.apiKey!==firebaseConfig.apiKey);if(old.length===1)return {legacyRefreshToken:old[0].stsTokenManager.refreshToken};return null;
+}
+async function persistedRows(){if(!globalThis.indexedDB)return [];return new Promise((resolve,reject)=>{let done=false;const fail=()=>{if(done)return;done=true;clearTimeout(timer);reject(Object.assign(Error('Önceki hesap okunamadı. Yeniden dene.'),{code:'auth/network-request-failed'}))};const finish=rows=>{if(done)return;done=true;clearTimeout(timer);resolve(rows)};const timer=setTimeout(fail,4000);let request;try{request=indexedDB.open('firebaseLocalStorageDb')}catch{return fail()}request.onupgradeneeded=()=>{request.transaction.abort();finish([])};request.onerror=()=>{if(!done)fail()};request.onsuccess=()=>{const db=request.result;if(done){db.close();return}if(!db.objectStoreNames.contains('firebaseLocalStorage')){db.close();return finish([])}try{const tx=db.transaction('firebaseLocalStorage','readonly'),all=tx.objectStore('firebaseLocalStorage').getAll();all.onsuccess=()=>finish(all.result.filter(row=>!row.fbase_key||row.fbase_key.startsWith('firebase:authUser:')).map(row=>row.value));tx.oncomplete=()=>db.close();tx.onerror=()=>{db.close();fail()}}catch{db.close();fail()}}})}
+// One-time migration reads existing persistence; it never starts a second Auth SDK.
+export async function existingWebSession(){let pending=null;try{pending=JSON.parse(window.RenkioNative?.legacyIdentity?.()||'null')}catch{}const rows=await persistedRows();const stored=storedSession(rows,pending);if(stored)return stored;const fallback=[];for(const storage of [localStorage,sessionStorage])for(let i=0;i<storage.length;i++){const key=storage.key(i);if(key?.startsWith('firebase:authUser:'))try{fallback.push(JSON.parse(storage.getItem(key)))}catch{}}return storedSession(fallback,pending)}

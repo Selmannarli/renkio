@@ -1,0 +1,11 @@
+/* Included only in the 1.14 Play package. */
+#scores .illustrated-avatar{overflow:visible!important}
+#scores .character-art{overflow:visible!important;contain:layout style!important}
+.character-canvas.portrait-overscan{position:absolute!important;left:-17.5%!important;top:-17.5%!important;width:135%!important;height:135%!important;max-width:none!important;pointer-events:none}
+.account-welcome{width:min(390px,calc(100vw - 30px));text-align:center}
+.account-welcome>p{line-height:1.5;margin:12px 0 22px}
+.account-welcome .button{width:100%;margin:7px 0;white-space:normal;min-height:48px}
+.account-conflict .account-choice-card{display:block;width:100%;padding:16px;margin:12px 0;border:1px solid var(--line);border-radius:18px;background:var(--lilac);color:var(--ink);text-align:left}
+.account-choice-card strong,.account-choice-card small{display:block;white-space:normal;overflow-wrap:anywhere}.account-choice-card strong{font-size:17px}.account-choice-card small{margin-top:6px;line-height:1.5}
+.account-state-note{display:block;max-width:100%;overflow-wrap:anywhere;white-space:normal;font-size:12px;line-height:1.4;color:var(--muted);margin-top:8px}
+body .setting-row :is(b,small),body .menu-link{overflow-wrap:anywhere;white-space:normal}

@@ -87,3 +87,5 @@ Object.assign(EN,{'Rehberli oyun':'Guided game','Eğitimi ana menüden başlatab
 Object.assign(EN,{'Sıra sende':'Your turn','Sıra rakipte':'Opponent’s turn','Bekleniyor':'Waiting','Oyun bitti':'Game over'});
 
 Object.assign(EN,{'Hesap bağlantısı zaman aşımına uğradı. Lütfen yeniden dene.':'Account connection timed out. Please try again.'});
+
+Object.assign(EN,{"İlerlemeni koru":"Keep your progress","Hesabını bağlayarak aynı oyuna başka cihazdan da devam edebilirsin.":"Connect an account to continue your game on another device.","E-posta ile giriş":"Sign in with email","İki farklı hesap bulundu":"Two different accounts found","Kayıtların korunur. Hangisiyle devam etmek istersin?":"Your saves are kept. Which account would you like to use?"});

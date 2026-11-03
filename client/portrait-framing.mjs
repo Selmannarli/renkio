@@ -1,0 +1,4 @@
+import * as T from 'three';
+// Camera framing is anatomical. Wardrobe geometry must never zoom the face out.
+export function anatomicalBounds(root){const box=new T.Box3();root.updateWorldMatrix(true,true);root.traverse(node=>{if(!node.isMesh||!node.geometry)return;for(let p=node;p;p=p.parent)if(p.userData.attachment)return;node.geometry.computeBoundingBox();box.union(node.geometry.boundingBox.clone().applyMatrix4(node.matrixWorld))});return box}
+export function portraitFrame(root){const bounds=anatomicalBounds(root),headBounds=anatomicalBounds(root.userData.rig.head),size=bounds.getSize(new T.Vector3()),headSize=headBounds.getSize(new T.Vector3()),headCenter=headBounds.getCenter(new T.Vector3());headCenter.y-=.04;return {center:bounds.getCenter(new T.Vector3()),radius:Math.max(size.y,size.x)*.5,headCenter,headRadius:Math.max(headSize.y*1.08,headSize.x)*.5}}
