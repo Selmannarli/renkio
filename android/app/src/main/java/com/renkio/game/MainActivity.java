@@ -39,7 +39,19 @@ public final class MainActivity extends Activity {
   @JavascriptInterface public void identityRestored(){getSharedPreferences("identity-transfer",MODE_PRIVATE).edit().remove("pending").putBoolean("done",true).apply();}
   @JavascriptInterface public void acceptIdentity(String raw){if(!restoringIdentity||raw==null||raw.length()>500000)return;try{JSONObject data=new JSONObject(raw);if(data.optString("refreshToken").length()<20)return;getSharedPreferences("identity-transfer",MODE_PRIVATE).edit().putString("pending",data.toString()).apply();runOnUiThread(()->finishIdentityRestore());}catch(Exception ignored){}}
 
-  @JavascriptInterface public void shareGame(String value){runOnUiThread(()->{try{Uri link=Uri.parse(value);if(!foreground||!trusted(link)||!"/".equals(link.getPath())||!link.getQueryParameter("room").matches("[A-F0-9]{6}"))return;Intent send=new Intent(Intent.ACTION_SEND);send.setType("text/plain");send.putExtra(Intent.EXTRA_TEXT,"Renkio’da birlikte oynayalım.\n"+link.toString());startActivity(Intent.createChooser(send,"Oyuna davet et"));}catch(RuntimeException ignored){}});}
+  @JavascriptInterface public void shareReferral(String value,String message){
+   runOnUiThread(()->{
+    try{
+     Uri link=Uri.parse(value);
+     String ref=link.getQueryParameter("ref");
+     if(!foreground||!trusted(link)||!"/".equals(link.getPath())||ref==null||!ref.matches("[0-9]{5}")||message==null||message.length()>300)return;
+     Intent send=new Intent(Intent.ACTION_SEND).setType("text/plain");
+     send.putExtra(Intent.EXTRA_TEXT,message+"\n"+link);
+     startActivity(Intent.createChooser(send,"Arkadaş davet et"));
+    }catch(RuntimeException ignored){}
+   });
+  }
+  @JavascriptInterface public void shareGame(String value){runOnUiThread(()->{try{Uri link=Uri.parse(value);if(!foreground||!trusted(link)||!"/".equals(link.getPath())||!link.getQueryParameter("room").matches("[A-F0-9]{6}"))return;Intent send=new Intent(Intent.ACTION_SEND);send.setType("text/plain");send.putExtra(Intent.EXTRA_TEXT,"Bir maça hazır mısın? Renkio’da masama katıl!\n"+link.toString());startActivity(Intent.createChooser(send,"Oyuna davet et"));}catch(RuntimeException ignored){}});}
 
   @JavascriptInterface public String pushState(){try{JSONObject value=new JSONObject();boolean granted=Build.VERSION.SDK_INT<33||checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)==android.content.pm.PackageManager.PERMISSION_GRANTED;value.put("asked",getSharedPreferences("push",MODE_PRIVATE).getBoolean("permissionAsked",false));value.put("allowed",granted&&getSystemService(android.app.NotificationManager.class).areNotificationsEnabled());value.put("enabled",getSharedPreferences("push",MODE_PRIVATE).getBoolean("enabled",false));value.put("token",getSharedPreferences("push",MODE_PRIVATE).getString("token",""));return value.toString();}catch(Exception ignored){return "{}";}}
   @JavascriptInterface public void notificationPreferences(boolean audio,boolean haptics){getSharedPreferences("push",MODE_PRIVATE).edit().putBoolean("audio",audio).putBoolean("haptics",haptics).apply();}

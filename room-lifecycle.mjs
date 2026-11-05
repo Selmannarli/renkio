@@ -14,7 +14,7 @@ export function openRoomEntry(room,uid,profiles={}){
  if(room.closedAt)return null;
  const me=room.seats.findIndex(s=>s.uid===uid&&!s.bot&&!s.kicked);
  if(me<0||room.game&&(room.game.over||room.game.players[me]?.eliminated))return null;
- return {room:room.code,matchId:room.game?.matchId||null,token:room.seats[me].token,updated:room.updated,waiting:!room.game,seats:room.seats.filter(s=>!s.kicked).map(s=>({name:profiles[s.playerId]?.name||s.name,playerId:s.playerId,avatar:profiles[s.playerId]?.avatar||s.avatar})),host:me===0,count:room.seats.length,names:room.seats.filter((s,i)=>i!==me&&!s.kicked).map(s=>s.name),turn:room.game?.turn===me,score:room.game?.players[me]?.score||0,timeouts:room.game?.timeoutCounts?.[me]||0};
+ return {room:room.code,matchId:room.game?.matchId||null,turnSeconds:room.game?.turnSeconds||0,token:room.seats[me].token,updated:room.updated,waiting:!room.game,seats:room.seats.filter(s=>!s.kicked).map(s=>({name:profiles[s.playerId]?.name||s.name,playerId:s.playerId,avatar:profiles[s.playerId]?.avatar||s.avatar})),host:me===0,count:room.seats.length,names:room.seats.filter((s,i)=>i!==me&&!s.kicked).map(s=>s.name),turn:room.game?.turn===me,score:room.game?.players[me]?.score||0,timeouts:room.game?.timeoutCounts?.[me]||0};
 }
 export function waitingRoomFor(rooms,uid){return uid?[...rooms.values()].find(r=>!r.closedAt&&!r.game&&r.seats.some(s=>s.uid===uid&&!s.kicked))||null:null}
 export function leaveLobby(room,actor,{disband=false,now=Date.now()}={}){
