@@ -7,6 +7,29 @@ function economy(profile){
  if(!profile.economy){const old=profile.reward||{};profile.economy={version:2,diamonds:0,inventory:{joker:Math.max(0,old.balance||0),hint:0},lastClaim:old.lastClaim,claimedDays:old.claimedDays||0,receipts:[]}}
  return profile.economy;
 }
+export const REFERRAL_REWARD=50;
+export function registerReferral(state,invitee,inviter,now=Date.now()){
+ const profile=state.profiles[invitee],host=state.profiles[inviter];
+ if(!profile||!host||invitee===inviter)return false;
+ if(profile.referral)return profile.referral.inviter===inviter;
+ if(!Number.isFinite(profile.createdAt)||now-profile.createdAt>2*86400000||host.createdAt>=profile.createdAt||
+    state.matches.some(match=>match.players.some(player=>player.id===invitee)))return false;
+ profile.referral={inviter,at:now};
+ return true;
+}
+export function rewardReferralMatch(state,room,record){
+ if(record.players.length!==2||record.players.some(player=>player.bot))return;
+ const actors=new Set(record.moves.filter(move=>move.tiles?.length).map(move=>move.actor));
+ if(!actors.has(0)||!actors.has(1))return;
+ for(let i=0;i<2;i++){
+  const id=room.seats[i]?.playerId,other=room.seats[1-i]?.playerId;
+  const profile=state.profiles[id],inviter=state.profiles[other];
+  if(!profile||!inviter||id===other||profile.referral?.inviter!==other||profile.referral.paidAt)continue;
+  profile.referral.paidAt=record.at||Date.now();
+  economy(profile).diamonds+=REFERRAL_REWARD;
+  economy(inviter).diamonds+=REFERRAL_REWARD;
+ }
+}
 export const OCTOBER_GIFT_CUTOFF=Date.parse('2026-11-01T00:00:00+01:00');
 export function grantOctoberGift(profile,now=Date.now()){
  if(!Number.isFinite(profile.createdAt)||profile.createdAt>=OCTOBER_GIFT_CUTOFF||profile.createdAt>now||profile.octoberGift2026)return false;

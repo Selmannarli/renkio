@@ -40,3 +40,22 @@ body[data-theme=day] .avatar-dialog :is(.accessory-item,.animation-choice,.avata
 body[data-theme=day] .avatar-dialog :is(.accessory-price,.avatar-wallet,.accessory-item>small){color:#65427d!important;opacity:1!important}
 body[data-theme=day] .tutorial-card{background:#fffefd!important;color:#342542!important;border-color:#c7afd9!important}
 body[data-theme=day] button:disabled{opacity:.55}
+
+/* Clear surfaces in the light theme, including an empty lobby. */
+body[data-theme=day] .lobby-card {background:var(--surface)!important;border-radius:18px}
+body[data-theme=day] #morePage {background:transparent!important;box-shadow:none!important;overflow:hidden;padding-inline:12px}
+body[data-theme=day] #morePage .menu-link {box-shadow:none!important}
+body[data-theme=day] .lobby-card :is(.lobby-chat,.lobby-exit-actions .text-button) {background:#f0e8f8!important;color:#462e59!important;border:1px solid #d8c5e6}
+body[data-theme=day] .lobby-chat :is(h2,.lobby-chat-empty) {color:#462e59!important}
+.lobby-chat:has(.lobby-messages:not(:empty)) .lobby-chat-empty {display:none}
+.lobby-chat-empty,.async-match-description {color:var(--muted);font-size:13px;margin:6px 0}
+.match-timers button[data-match-seconds="43200"] {grid-column:1/-1}
+.saved-match>span>.icon {display:inline-block;width:1em;height:1em;margin-inline-end:6px;vertical-align:-.1em;color:#e8b54d}
+body[data-theme=day] .saved-match[data-outcome=win] > strong {background:#d9f1df!important;color:#12512b!important;border-color:#8bb99a!important}
+body[data-theme=day] .saved-match[data-outcome=loss] > strong {background:#f9e2e7!important;color:#822338!important;border-color:#d9a2af!important}
+body[data-theme=day] .saved-match[data-outcome=draw] > strong {background:#ede5f5!important;color:#513466!important}
+body[data-theme=day] .saved-match>span>.icon {color:#775205}
+.daily-reward .reward-day small {font-size:10px;white-space:nowrap;color:inherit}
+.daily-reward .reward-day b {font-size:11px}
+.daily-reward .reward-shop {grid-column:1/-1;min-height:38px;justify-self:start}
+body[data-theme=day] .daily-reward .reward-shop {background:#eee2f8;color:#4e3067;border:1px solid #cdb5df}

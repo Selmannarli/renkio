@@ -87,3 +87,8 @@ Object.assign(EN,{'Rehberli oyun':'Guided game','Eğitimi ana menüden başlatab
 Object.assign(EN,{'Sıra sende':'Your turn','Sıra rakipte':'Opponent’s turn','Bekleniyor':'Waiting','Oyun bitti':'Game over'});
 
 Object.assign(EN,{'Hesap bağlantısı zaman aşımına uğradı. Lütfen yeniden dene.':'Account connection timed out. Please try again.'});
+
+
+Object.assign(EN,{'Asenkron':'Async','Arkadaş davet et · 50 elmas':'Invite a friend · 50 diamonds','Renkio’ya katıl! Hesabını bağlayıp benimle ilk maçını tamamla, ikimiz de 50 elmas kazanalım.':'Join Renkio! Link your account and finish your first match with me to earn 50 diamonds each.','Hazır':'Ready','12 sa / hamle':'12 h per move','Asenkron · 12 sa / hamle':'Async · 12 h per move','Hamleni yapıp çıkabilirsin. Sıra sana gelince bildirim alırsın.':'Play your move and leave. Get notified when it is your turn.','Sohbeti sen başlat.':'Start the conversation.','Rakip jokerini kullandı.':'An opponent used a joker.','Rakip ipucu kullandı.':'An opponent used a hint.','Bir maça hazır mısın? Renkio’da masama katıl!':'Ready for a match? Join my table on Renkio!'});
+
+Object.assign(EN,{'En fazla 5 açık 12 saatlik maç oynayabilirsin. Yeni maç için birini bitir.':'You can have up to 5 active 12-hour matches. Finish one before starting another.','En fazla 3 açık kısa süreli maç oynayabilirsin. Yeni maç için birini bitir.':'You can have up to 3 active short matches. Finish one before starting another.','Masadaki bir oyuncunun bu süre grubundaki maç sınırı dolu.':'A player at this table has reached the limit for this match duration.'});
