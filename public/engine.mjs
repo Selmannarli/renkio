@@ -27,6 +27,7 @@ export function pass(g,actor){checkCelebration(g);if(g.timeoutDecision)throw Err
 export function settleRackPenalty(g){if(!g.over||g.rackPenaltyApplied)return;g.rackPenaltyApplied=true;for(const [actor,p]of g.players.entries()){const count=(p.hand||[]).filter(t=>!t.joker).length;p.rackPenalty=count;p.score-=count;if(count)g.history.push({actor,name:p.name,score:-count,text:'Elde kalan taşlar',penalty:true})}}
 function next(g){settleRackPenalty(g);g.turnSerial=(g.turnSerial||0)+1;g.turnStartedAt=Date.now();do{g.turn=(g.turn+1)%g.players.length}while(g.players[g.turn].eliminated&&!g.over);g.revision++;g.turnDeadline=g.turnSeconds&&!g.over?Date.now()+g.turnSeconds*1000:null}
 export function bestMove(board,hand,opening=0,options={}){
+ if(options.thorough)return bestHintMove(board,hand,opening,options);
  hand=hand.filter(t=>!t.joker);let best=null,count=0;const limit=18000;let starts=new Map();if(!Object.keys(board).length)starts.set('0,0',[0,0]);else for(const pos of Object.keys(board)){let [x,y]=pos.split(',').map(Number);for(const [dx,dy] of [[1,0],[-1,0],[0,1],[0,-1]])if(!board[key(x+dx,y+dy)])starts.set(key(x+dx,y+dy),[x+dx,y+dy])}
  const unique=[...new Map(hand.map(t=>[`${t.c}${t.s}`,t])).values()];
  for(const [sx,sy] of starts.values())for(const [dx,dy] of dirs){
@@ -35,6 +36,57 @@ export function bestMove(board,hand,opening=0,options={}){
    for(const t of remaining){if(placed.length&&(!placed.every(p=>hand.find(h=>h.id===p.id).c===t.c)&&!placed.every(p=>hand.find(h=>h.id===p.id).s===t.s)))continue;const np=[...placed,{id:t.id,x,y}],r=validate(board,hand,np);if(!r.error)search(x+dx,y+dy,remaining.filter(a=>a.id!==t.id),np)}
   }search(sx,sy,unique,[]);if(count>limit)return best
  }return best
+}
+
+function bestHintMove(board,hand,opening,options){
+ let best=bestMove(board,hand,opening,{...options,thorough:false});
+ const tiles=[...new Map(hand.filter(t=>!t.joker).map(t=>[`${t.c}:${t.s}`,t])).values()];
+ if(!tiles.length)return best;
+ const occupied=Object.keys(board),roots=new Map(),trial={...board};
+ const adjacent=(x,y)=>[[1,0],[-1,0],[0,1],[0,-1]].some(([dx,dy])=>board[key(x+dx,y+dy)]);
+ function addRoot(x,y,dx,dy){
+  if(Math.abs(x)>110||Math.abs(y)>110||board[key(x,y)])return;
+  let priority=0;
+  for(let i=0;i<6;i++){
+   const bonus=options.experimental&&options.bonusCells?.[key(x+i*dx,y+i*dy)];
+   if(bonus&&!bonus.used)priority+=bonus.type==='3x'?18:bonus.type==='2x'?12:Number(bonus.type.slice(1))||0;
+  }
+  roots.set(`${x},${y}:${dx}`,{x,y,dx,dy,priority});
+ }
+ if(!occupied.length){for(const [dx,dy]of dirs)addRoot(0,0,dx,dy);}
+ else for(const pos of occupied){
+  const [x,y]=pos.split(',').map(Number);
+  for(const [ax,ay]of [[1,0],[-1,0],[0,1],[0,-1]]){
+   const sx=x+ax,sy=y+ay;if(board[key(sx,sy)])continue;
+   // A legal line may begin before the first cell touching the existing board.
+   for(const [dx,dy]of dirs)for(let offset=0;offset<6;offset++)addRoot(sx-offset*dx,sy-offset*dy,dx,dy);
+  }
+ }
+ let nodes=0;
+ const budget=300000;
+ for(const {x,y,dx,dy}of [...roots.values()].sort((a,b)=>b.priority-a.priority)){
+  function search(px,py,remaining,placed,connected){
+   if(++nodes>budget)return;
+   if(connected&&placed.length&&(!opening||placed.length===opening)){
+    const result=validate(board,hand,placed,options);
+    if(!result.error&&(!best||result.score>best.score||result.score===best.score&&placed.length>best.placements.length))best={score:result.score,placements:placed.map(p=>({...p}))};
+   }
+   if(!remaining.length)return;
+   while(board[key(px,py)]){px+=dx;py+=dy;}
+   if(Math.abs(px)>110||Math.abs(py)>110)return;
+   for(const tile of remaining){
+    if(placed.length&&!placed.every(p=>p.c===tile.c)&&!placed.every(p=>p.s===tile.s))continue;
+    const position=key(px,py);trial[position]=tile;
+    const valid=dirs.every(([lx,ly])=>legal(line(trial,px,py,lx,ly)));
+    if(valid)search(px+dx,py+dy,remaining.filter(t=>t.id!==tile.id),[...placed,{id:tile.id,c:tile.c,s:tile.s,x:px,y:py}],connected||adjacent(px,py));
+    delete trial[position];
+    if(nodes>budget)return;
+   }
+  }
+  search(x,y,tiles,[],!occupied.length);
+  if(nodes>budget)break;
+ }
+ return best;
 }
 
 export function resignGame(g,actor,text='Pes etti'){

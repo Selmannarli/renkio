@@ -5,3 +5,4 @@ export class ChatOutbox {
 }
 export function hintAllowed(game,seat,admin=false){return admin||(game.hintUses?.[seat]||0)<2}
 export function useHint(game,seat){game.hintUses??={};game.hintUses[seat]=(game.hintUses[seat]||0)+1}
+export function hintUsesForViewer(game,seats,viewer,privatePlayerId){return Object.fromEntries(Object.entries(game.hintUses||{}).filter(([seat])=>Number(seat)===viewer||seats[seat]?.playerId!==privatePlayerId))}
