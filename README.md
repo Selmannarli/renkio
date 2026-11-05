@@ -1,3 +1,16 @@
+# Renkio — güncel çalışma bilgileri
+
+Canlı uygulama https://renkio.onrender.com/ adresindedir. Render servisi ücretli, sürekli açık 0.5 CPU / 512 MB plandadır. Kalıcı oyun ve sosyal kayıtlar Firebase Firestore üzerindedir. Yerel JSON dosyaları tek başına üretim yedeği değildir.
+
+Node.js 20+ ile `npm ci`, `npm start`; testler `npm test`. Yerel geliştirmede üretim FIREBASE_ADMIN_JSON anahtarını kullanmayın. Bonuslu kurallar için RENKIO_EXPERIMENTAL=1 gerekir. Kaynak karakter değişikliklerinde `npm run build:table`, Auth bundle değişikliklerinde `npm run build:auth` çalıştırılır.
+
+Maç aramada aynı süre seçimi eşleşir; bot beklemesi 10 saniyedir. Kısa aktif maçlar toplam 3, 12 saatlikler ayrı 5 ile sınırlıdır. Joker ve ipucu destekleri vardır. Güçlü ipucu bonus puanlı hamleleri Worker üzerinde arar. Lobi ile aktif maç birbirinden ayrıdır.
+
+Google Play için ayrı release/play-1.14.0 dalı bulunur. Bu dalın native hesap protokolü ve arayüzü mevcut legacy OTA yerine doğrudan yayımlanmamalıdır. Android imzası korunmalıdır.
+
+Aşağıdaki eski sürüm notları tarihsel kayıttır. Ücretsiz sunucu, üç dakika bekleme, ipucu yok ve yalnızca yerel kayıt gibi ifadeler güncel sistemi tarif etmez.
+
+---
 # Renkio 1.1.0
 
 Maç bulma, beş sunucu botu, misafir/e-posta/Google hesabı ve bulutta saklanan takma adlar. Web ve Android aynı eşleştirme kuyruğunu kullanır. Bot için bekleme süresi 3 dakika; beş bot doluysa ilk uygun rakip beklenir.
