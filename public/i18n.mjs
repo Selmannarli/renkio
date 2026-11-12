@@ -48,7 +48,8 @@ const templates=[
 ];
 export function t(value){if(language!=='en'||typeof value!=='string')return value;const key=value.trim();if(EN[key])return value.replace(key,EN[key]);for(const [pattern,fn]of templates){const m=key.match(pattern);if(m)return value.replace(key,fn(...m.slice(1)))}return value}
 export function addTranslations(copy){Object.assign(EN,copy)}
-export function setLanguageForTest(value){language=value==='en'?'en':'tr'}
+export function setLanguage(value){language=value==='en'?'en':'tr'}
+export {setLanguage as setLanguageForTest};
 export function installLanguage(){
  document.documentElement.lang=language;
  const select=document.getElementById('languageSelect');if(select)select.value=language;

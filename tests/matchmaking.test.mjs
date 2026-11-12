@@ -60,6 +60,22 @@ test('saved bot plans survive reloads, do not reroll on polling and leave deadli
  const next=planBotTurn({...game,revision:4},plan,60000,()=>1);assert.equal(next.at,60000);assert.equal(next.revision,4);
 });
 
+test('twelve-hour bots respond within one to two minutes when the player moves within ten minutes',()=>{
+ const delay=(humanSeconds,sample=.5)=>serverBotDelay(43200,()=>sample,{humanSeconds});
+ assert.equal(delay(0,0),60000);
+ assert.equal(delay(600,1),120000);
+ assert.ok(delay(20)<delay(300));
+ assert.ok(delay(300)<delay(600));
+ assert.equal(delay(601,1),600000);
+ assert.equal(delay(null,1),600000);
+ const room={seats:[{}, {bot:true}],game:{matchId:'async',revision:1,turn:0,history:[],turnSeconds:43200,turnDeadline:43201000}};
+ updateBotPace(room,1000);
+ room.game={...room.game,revision:2,turn:1,history:[{}],turnDeadline:43231000};
+ updateBotPace(room,31000);
+ assert.equal(room.lastHumanSeconds,30);
+ assert.equal(planBotTurn(room.game,null,31000,()=>.5,{humanSeconds:room.lastHumanSeconds}).at,98000);
+});
+
 test('bot answers account for human thinking, become slower with progress and stay quick after long waits',()=>{
  for(const humanSeconds of [20,30,40,50,10]){const values=[0,.5,1].map(n=>serverBotDelay(60,()=>n,{humanSeconds,moves:14}));if(humanSeconds>=40)assert.ok(values.every(v=>v<=10000));if(humanSeconds===20)assert.equal(values[1],20000);if(humanSeconds===30)assert.equal(values[1],10000);if(humanSeconds===10)assert.deepEqual(values,[15000,25000,35000])}
  assert.ok(serverBotDelay(60,()=>.5,{humanSeconds:20,moves:0})<serverBotDelay(60,()=>.5,{humanSeconds:20,moves:14}));

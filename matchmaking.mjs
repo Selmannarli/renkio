@@ -18,7 +18,14 @@ export function matchLimit(rooms,player,seconds){
  return null;
 }
 export function serverBotDelay(seconds,random=Math.random,{humanSeconds=null,moves=14}={}){
- const sample=Math.max(0,Math.min(1,random())),progress=Math.min(1,Math.max(0,moves/14));if(seconds>=43200)return Math.round(2000+sample*(88000+progress*510000));
+ const sample=Math.max(0,Math.min(1,random())),progress=Math.min(1,Math.max(0,moves/14));
+ if(seconds===43200){
+  if(Number.isFinite(humanSeconds)&&humanSeconds>=0&&humanSeconds<=600){
+   const pace=humanSeconds/600;
+   return Math.round(60000+pace*30000+sample*(10000+pace*20000));
+  }
+  return Math.round(2000+sample*(88000+progress*510000));
+ }
  const scale=(seconds||60)/60;
  if(humanSeconds===null)return Math.round(scale*(4+sample*(6+progress*10))*1000);
  const human=humanSeconds/scale;let delay;
