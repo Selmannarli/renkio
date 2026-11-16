@@ -75,6 +75,7 @@ Object.assign(EN,{'Bu oyuncuya mesaj gönderilemiyor.':'Messages cannot be sent 
 Object.assign(EN,{'Görünüm':'Appearance','Hareketler':'Animations','Selamlama':'Greeting','Kazanma':'Victory','Kaybetme':'Defeat','Hareketi izle':'Preview animation','Seçimin diğer oyunculara da görünür.':'Other players see your chosen animation.','Tek elle selam':'One-hand wave','İki elle selam':'Two-hand wave','Başla selam':'Head nod','Eğilerek selam':'Friendly bow','Neşeli selam':'Cheerful greeting','Zafer pozu':'Victory pose','Zafer dansı':'Victory dance','Sevinç sıçrayışı':'Happy hop','Üzüntü':'Sadness','Küskünlük':'Sulking','Öfke':'Anger','Hınzır öfke':'Playful stomp'});
 
 Object.assign(EN,{'Kaydediliyor…':'Saving…','Kaydedildi':'Saved','Kaydedilemedi · Tekrar dene':'Could not save · Retry'});
+Object.assign(EN,{'Kaydet ve Çık':'Save and Exit','Satın Al':'Buy','Satın alınıyor…':'Purchasing…','Mağazaya Git':'Get More','İşlem tamamlanamadı.':'Could not complete the action.'});
 
 Object.assign(EN,{'Beyaz':'White'});
 

@@ -168,7 +168,17 @@ async function shareInvite(){if(!room)return;const url=inviteLink();try{if(windo
 $('lobbyInvite').onclick=()=>{inviteRoomCode=room?.code;modal('friendsDialog')};
 $('copyCode').onclick=()=>copy(room.code,$('copyCode'));$('copyLink').onclick=shareInvite;$('gameCode').onclick=()=>local?run(async()=>{const lobby=await api('create',{name:name(),...await accountPayload()});await goHome();connect(lobby)}):shareInvite();
 function requestLeave(){if(view!=='home')run(goHome)}
-function handleAppBack(){if(view!=='home'){run(goHome);return true}if(document.body.dataset.page!=='home'){showHub('home');return true}const d=document.querySelector('dialog[open]');if(d){closeDialogs();return true}return false}
+function handleAppBack(){
+ const avatar=document.querySelector('.avatar-dialog[open]');
+ if(avatar){
+  if($('shopDialog').open)$('shopDialog').close();
+  else if(!avatar.querySelector('.avatar-save').disabled)avatar.close();
+  return true;
+ }
+ if(view!=='home'){run(goHome);return true}
+ if(document.body.dataset.page!=='home'){showHub('home');return true}
+ const d=document.querySelector('dialog[open]');if(d){closeDialogs();return true}return false
+}
 window.RenkioBack=handleAppBack;
 function requestKick(index){const target=room?.seats[index];if(!room?.host||!target)return;const d=profileDialog(t('Masadan çıkar?'));d.append(node('p','',target.name));const confirm=node('button','button full kick-confirm','Masadan çıkar');confirm.innerHTML=icon('userMinus')+'Masadan çıkar';confirm.onclick=()=>run(async()=>{confirm.disabled=true;try{receive(await api('kick',{...session,seat:index,seatId:target.seatId}));d.close();d.remove()}finally{confirm.disabled=false}});d.append(confirm)}
 $('brandHome').onclick=()=>view==='home'?showHub('home'):requestLeave();$('leave').onclick=e=>{if(!e.isTrusted&&window.RenkioNative){handleAppBack();return}if(view==='home'&&document.body.dataset.page!=='home'){showHub('home');return}chatIsOpen()?setChatPage(false):requestLeave()};$('lobbyLeave').onclick=requestLeave;$('stay').onclick=()=>$('leaveDialog').close();
@@ -320,7 +330,25 @@ setInterval(()=>{if(view==='home'&&document.visibilityState==='visible'&&navigat
 
 function renderProfileButton(){renderHomeIdentity();const b=$('editAvatar');if(!b)return;b.replaceChildren(playerAvatar(accounts.profile?.name||'Sen',0,'',true),node('span','','Karakterini düzenle'))}
 async function syncAvatar(){const id=accounts.profile?.id;if(!id)return;if(avatarSynced===id)return avatarSyncPromise;avatarSynced=id;avatarSyncPromise=(async()=>{const token=await accounts.accountToken();const remote=await api('profile',{accountToken:token},20000);if(accounts.profile?.id!==id)return;if(hasPendingAvatar()){await api('avatar',{accountToken:token,avatar:readAvatar()},20000);clearPendingAvatar()}else if(remote.avatar)saveAvatar(remote.avatar);else await api('avatar',{accountToken:token,avatar:readAvatar()},20000);renderProfileButton();if(game)render()})().catch(e=>{avatarSynced=null;throw e});return avatarSyncPromise}
-async function editAvatar(){closeDialogs();refreshWallet().catch(()=>{});openAvatarPicker(async value=>{renderProfileButton();if(game)render();const token=await accounts.accountToken();await api('avatar',{accountToken:token,avatar:value},20000);renderProfileButton();if(game)render()},{inventory:wallet.accessories||[],diamonds:wallet.diamonds||0,buy:async item=>{await walletChange({item,price:accessoryById(item)?.price||0,accessory:true},async()=>api('cosmetics/buy',{accountToken:await accounts.accountToken(),item,receipt:crypto.randomUUID()}));return wallet}})}
+async function editAvatar(){
+ closeDialogs();
+ if(!accounts.profile)try{await accounts.ensureAccount()}catch(error){toast(t(accounts.authMessage(error)),'error');return}
+ if(document.querySelector('.avatar-dialog[open]'))return;
+ const editorOwner=accounts.profile?.id;
+ async function editorToken(){
+  const token=await accounts.accountToken();
+  if(accounts.profile?.id!==editorOwner)throw Error('Hesap değişti.');
+  return token;
+ }
+ openAvatarPicker(async value=>{
+  await api('avatar',{accountToken:await editorToken(),avatar:value},20000);
+  if(accounts.profile?.id===editorOwner){renderProfileButton();if(game)render()}
+ },{
+  wallet,loadWallet:async()=>{await refreshWallet();return wallet},
+  buy:(item,receipt)=>walletChange({item,price:accessoryById(item).price,accessory:true},async()=>api('cosmetics/buy',{accountToken:await editorToken(),item,receipt})),
+  openShop:()=>openShop({overAvatar:true})
+ });
+}
 $('editAvatar').onclick=editAvatar;
 function archiveKey(){return 'renkio-matches:'+(accounts.profile?.id||'guest')}
 function archived(){return read(archiveKey(),[])}
@@ -518,7 +546,14 @@ $('referralShare').onclick=()=>run(async()=>{
  try{if(window.RenkioNative?.shareReferral){window.RenkioNative.shareReferral(url.href,message);return}if(navigator.share){await navigator.share({title:'Renkio',text:message,url:url.href});return}}catch(e){if(e.name==='AbortError')return}
  await copy(message+'\n'+url.href,$('referralShare'));
 });
-async function openShop(){modal('shopDialog');$('shopStatus').textContent='';paintShop();try{await accounts.ensureAccount();await refreshWallet();paintShop()}catch(e){$('shopStatus').textContent=e.message}}
+async function openShop({overAvatar=false}={}){
+ const shop=$('shopDialog');
+ const closed=overAvatar?new Promise(resolve=>shop.addEventListener('close',resolve,{once:true})):null;
+ if(overAvatar){if(!shop.open)shop.showModal()}else modal('shopDialog');
+ $('shopStatus').textContent='';paintShop();
+ try{await accounts.ensureAccount();await refreshWallet();paintShop()}catch(e){$('shopStatus').textContent=t(e.message)}
+ if(closed)await closed;
+}
 async function purchaseSupport(item){if((wallet.diamonds||0)<5)return;const receipt=purchaseReceipts.get(item)||crypto.randomUUID();purchaseReceipts.delete(item);const task=walletChange({item,price:5},async()=>api('shop/buy',{accountToken:await accounts.accountToken(),item,receipt}));sound.play('purchase');$('shopStatus').textContent=t(item==='joker'?'Joker eklendi.':'İpucu eklendi.');try{await task}catch(e){purchaseReceipts.set(item,receipt);$('shopStatus').textContent=t(e.message);refreshWallet().catch(()=>{})}}
 
 
