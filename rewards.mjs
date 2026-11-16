@@ -2,10 +2,20 @@ import {accessoryById,ACCESSORIES} from './public/character-style.mjs';
 const dayFormat=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Berlin',year:'numeric',month:'2-digit',day:'2-digit'});
 export const rewardDay=(now=Date.now())=>dayFormat.format(new Date(now));
 export const SUPPORT_PRICE=5;
-export const dailyRewardAmount=claimedDays=>(Math.max(0,Number(claimedDays)||0)%5+1)*10;
+export const DAILY_REWARD_AMOUNTS=Object.freeze([10,10,10,10,10,10,50]);
+export const dailyRewardAmount=completedDays=>DAILY_REWARD_AMOUNTS[Math.max(0,Math.trunc(Number(completedDays)||0))%DAILY_REWARD_AMOUNTS.length];
 function economy(profile){
  if(!profile.economy){const old=profile.reward||{};profile.economy={version:2,diamonds:0,inventory:{joker:Math.max(0,old.balance||0),hint:0},lastClaim:old.lastClaim,claimedDays:old.claimedDays||0,receipts:[]}}
  return profile.economy;
+}
+function dailyRewardStatus(wallet,day){
+ const lastClaim=wallet.lastClaim;
+ const available=!lastClaim||lastClaim<day;
+ const previousDay=Date.parse(lastClaim)-Date.parse(day)===-86400000;
+ // Older wallets retained only the most recent claim date, so only that day can carry forward.
+ const previousSlot=wallet.dailyRewardSlot??1;
+ const streakDay=available?(previousDay?previousSlot%DAILY_REWARD_AMOUNTS.length+1:1):previousSlot;
+ return { available,streakDay,nextAmount:dailyRewardAmount(available?streakDay-1:streakDay) };
 }
 export const REFERRAL_REWARD=50;
 export function registerReferral(state,invitee,inviter,now=Date.now()){
@@ -35,10 +45,15 @@ export function grantOctoberGift(profile,now=Date.now()){
  if(!Number.isFinite(profile.createdAt)||profile.createdAt>=OCTOBER_GIFT_CUTOFF||profile.createdAt>now||profile.octoberGift2026)return false;
  const e=economy(profile);e.diamonds+=500;profile.octoberGift2026={amount:500,at:now};return true;
 }
-export function rewardView(profile,now=Date.now()){const e=economy(profile);return {octoberGift:profile.octoberGift2026||null,diamonds:e.diamonds,admin:!!e.unlimited,inventory:{...e.inventory},balance:e.inventory.joker,available:e.lastClaim!==rewardDay(now),claimedDays:e.claimedDays,nextAmount:dailyRewardAmount(e.claimedDays),day:rewardDay(now),accessories:[...new Set([...ACCESSORIES.filter(a=>!a.price).map(a=>a.id),...(e.accessories||[])])]}}
+export function rewardView(profile,now=Date.now()){const e=economy(profile),day=rewardDay(now);return {octoberGift:profile.octoberGift2026||null,diamonds:e.diamonds,admin:!!e.unlimited,inventory:{...e.inventory},balance:e.inventory.joker,...dailyRewardStatus(e,day),rewardAmounts:DAILY_REWARD_AMOUNTS,claimedDays:e.claimedDays,day,accessories:[...new Set([...ACCESSORIES.filter(a=>!a.price).map(a=>a.id),...(e.accessories||[])])]}}
 export function claimReward(profile,now=Date.now()){
- if(!rewardView(profile,now).available)throw Error('Bugünün ödülünü zaten topladın.');
- const e=economy(profile);e.diamonds+=dailyRewardAmount(e.claimedDays);e.lastClaim=rewardDay(now);e.claimedDays++;return rewardView(profile,now);
+ const wallet=economy(profile),day=rewardDay(now),status=dailyRewardStatus(wallet,day);
+ if(!status.available)throw Error('Bugünün ödülünü zaten topladın.');
+ wallet.diamonds+=status.nextAmount;
+ wallet.lastClaim=day;
+ wallet.dailyRewardSlot=status.streakDay;
+ wallet.claimedDays++;
+ return rewardView(profile,now);
 }
 function itemCheck(item){if(!['joker','hint'].includes(item))throw Error('Bu destek bulunamadı.')}
 function receiptCheck(e,id,item,kind){

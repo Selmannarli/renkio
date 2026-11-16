@@ -58,3 +58,75 @@ body[data-theme=day]:is([data-page=messages],[data-page=friends]){--surface:#fff
 .open-game-turn{display:grid;place-items:center;flex:0 0 38px;width:38px;height:38px;border-radius:50%;margin-left:auto}.open-game-turn .icon{width:21px;height:21px}.open-game-turn.is-own{color:#6ff4aa;background:#1cb86b25;border:1px solid #49db8c66}.open-game-turn.is-rival{color:#ffcf60;background:#edb02c20;border:1px solid #edb02c55}[data-theme=day] .open-game-turn.is-own{color:#12733e;background:#e0f6e9;border-color:#9edbb5}[data-theme=day] .open-game-turn.is-rival{color:#946000;background:#fff2cd;border-color:#ead08a}
 
 #turnPill{display:none!important}.syncing-move #commit{opacity:.72}.syncing-move .board-area{transition:box-shadow .2s}
+
+/* Browse pages share the home canvas. Only the individual controls get surfaces. */
+body[data-theme=day]:is([data-view=home],[data-view=hub]){
+ background:radial-gradient(ellipse 85vw 40rem at 50% 0,#ede3f8 0,transparent 65%),#f5f1fb!important;
+}
+body:is([data-view=home],[data-view=hub]) .app-header{
+ border-bottom:0!important;
+ background:transparent!important;
+ box-shadow:none!important;
+}
+#hubPages,#hubPages .hub-page{
+ background:transparent!important;
+ border:0!important;
+ border-radius:0;
+ box-shadow:none!important;
+}
+#leadersPage{
+ max-width:720px;
+ margin-inline:auto;
+ padding:0;
+}
+#leadersPage .page-heading{padding:12px 4px 18px}
+#leadersPage .period-tabs{
+ display:grid;
+ grid-template-columns:repeat(3,minmax(0,1fr));
+ margin-bottom:16px;
+ background:#2d2141;
+ border:1px solid #583f70;
+}
+#leadersPage .period-tabs button{
+ height:auto;
+ min-height:44px;
+ padding:7px 4px;
+}
+#leadersPage .period-tabs button[aria-pressed=true]{box-shadow:0 4px 14px #10051e18}
+#leadersList{display:grid;gap:8px}
+#leadersList .leader-row{
+ display:grid;
+ grid-template-columns:1.45em auto minmax(0,1fr) auto;
+ gap:10px;
+ margin:0;
+ padding:12px 14px;
+ color:var(--ink);
+ border-color:#58446b;
+ background:#292038;
+ box-shadow:0 8px 26px #12072014;
+}
+#leadersList .leader-row>b{color:#d6b6eb;font-size:14px;text-align:center}
+#leadersList .leader-row>span{min-width:0;white-space:nowrap}
+#leadersList .leader-row small{overflow:hidden;text-overflow:ellipsis}
+#leadersList .leader-row>strong{min-width:0;font-variant-numeric:tabular-nums}
+#leadersList .empty-state{margin:0}
+body[data-theme=day] #leadersPage .period-tabs{
+ background:#ede3f7!important;
+ border-color:#d6c9e3!important;
+}
+body[data-theme=day] #leadersPage .period-tabs button:not([aria-pressed=true]){
+ background:transparent!important;
+ border-color:transparent!important;
+}
+body[data-theme=day] #leadersList .leader-row{
+ color:#342542!important;
+ border-color:#ded2e9!important;
+ background:#fffefd!important;
+ box-shadow:0 8px 26px #55347612!important;
+}
+body[data-theme=day] #leadersList .leader-row>b,
+body[data-theme=day] #leadersList .leader-row small{color:#665175}
+@media(max-width:360px){
+ #leadersList .leader-row{gap:7px;padding-inline:10px}
+ #leadersPage .period-tabs button{font-size:11px}
+}

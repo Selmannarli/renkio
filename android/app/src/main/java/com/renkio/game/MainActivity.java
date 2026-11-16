@@ -33,6 +33,7 @@ public final class MainActivity extends Activity {
  private boolean page(Uri uri){String p=uri.getPath();return trusted(uri)&&(p.equals("/")||p.equals("/index.html")||p.equals("/privacy.html"));}
  public final class NativeUi {
   @JavascriptInterface public int accountProtocol(){return 2;}
+  @JavascriptInterface public String deviceRegion(){return java.util.Locale.getDefault().getCountry();}
   @JavascriptInterface public void accountRequest(String id,String action,String raw){if(id==null||!id.matches("[A-Za-z0-9-]{8,80}")||raw==null||raw.length()>40000)return;runOnUiThread(()->{if(web==null||!trusted(Uri.parse(web.getUrl()==null?HOME:web.getUrl())))return;try{nativeAccounts.request(id,action,new JSONObject(raw));}catch(Exception ignored){}});}
 
   @JavascriptInterface public String legacyIdentity(){return getSharedPreferences("identity-transfer",MODE_PRIVATE).getString("pending","");}

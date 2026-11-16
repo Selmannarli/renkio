@@ -1,7 +1,6 @@
-import {fixedNickname} from './identity-policy.mjs';
 import {GoogleFlow} from './google-flow.mjs';
 import {OptimisticQueue,walletProjection,hintDraft,projectAction,projectFriends} from './optimistic-ui.mjs';
-import {ChatOutbox,hintAllowed,useHint} from './chat-outbox.mjs';
+import {ChatOutbox,hintAllowed} from './chat-outbox.mjs';
 import {prepareMatchAccount} from './account-preparation.mjs';
 import {tutorialCanOffer} from './tutorial.mjs';
 import {GuidedTutorial} from './tutorial-ui.mjs';
@@ -98,7 +97,7 @@ let searching=false,searchTimer=null,searchGeneration=0,searchStarted=0,searchTo
 async function accountPayload(){try{return await prepareMatchAccount({name:$('name').value.trim(),ensure:accounts.ensureAccount,profile:()=>accounts.profile,rename:accounts.setNickname,token:accounts.accountToken,syncAppearance:syncAvatar})}catch(e){throw Object.assign(Error(accounts.authMessage(e)),{code:e.code})}}
 function clearRoomSession(){stream?.close();session=null;room=null;game=null;save('renkio-session',null);try{sessionStorage.removeItem('renkio-session')}catch{}localStorage.removeItem('qw-session');$('resume').classList.add('hidden')}
 let homePreparation=Promise.resolve(),tutorialRestoring=0;
-accounts.watchProfile(p=>{setAvatarOwner(p?.id);if(p?.id!==walletOwner){wallet=read('renkio-wallet:'+p?.id,{diamonds:0,inventory:{joker:0,hint:0},balance:0,available:null,claimedDays:0});walletOwner=p?.id;walletQueue=null;paintReward()}if(p&&friendsOwner!==p.id){friendsData=read('renkio-friends:'+p.id,{friends:[],incoming:[],outgoing:[],invites:[]});friendsOwner=p.id;friendFlow=null;renderFriends()}if(p){$('name').value=p.name;save('renkio-name',p.name)}$('accountName').textContent=p?.name||'Misafir';$('accountId').textContent=p?'ID '+(p.tag||'…'):'';$('accountKind').textContent=p?.guest?t('Misafir'):p?.providers?.includes('google.com')?'Google':t('Hesap');$('nickname').value=p?.name||$('name').value;if(accounts.nativeMode){let note=$('accountDialog').querySelector('.account-state-note');if(!note){note=node('small','account-state-note');$('accountKind').after(note)}note.textContent=p?.guest?(locale().startsWith('en')?'Guest · connect an account to keep your progress':'Misafir · ilerlemeni korumak için hesabını bağla'):(p?.email||'');}const nameLocked=!!fixedNickname(p?.id);$('name').readOnly=nameLocked;$('nickname').readOnly=nameLocked;$('nicknameForm').querySelector('button[type=submit]').hidden=nameLocked;$('guestNote').classList.toggle('hidden',!!p&&!p.guest);$('logoutAccount').classList.toggle('hidden',!p||p.guest);$('authOptions').classList.toggle('hidden',!!p&&!p.guest);$('deleteAccount').classList.toggle('hidden',!p);renderProfileButton();if(p){homePreparation=refreshWallet().catch(()=>{});syncPush(p,accounts.accountToken,api,preferences).catch(()=>{})}if(view==='home')homePreparation=Promise.allSettled([homePreparation,refreshOpenGames()]);if(p){tutorialRestoring++;restoreRoomSession().catch(()=>{}).finally(()=>tutorialRestoring--)}if(p){syncAvatar().catch(()=>{});refreshFriends().catch(()=>{})}else{friendsOwner=null;friendsData={friends:[],incoming:[],outgoing:[],invites:[]};renderFriends()}});
+accounts.watchProfile(p=>{setAvatarOwner(p?.id);if(p?.id!==walletOwner){wallet=read('renkio-wallet:'+p?.id,{diamonds:0,inventory:{joker:0,hint:0},balance:0,available:null,claimedDays:0});walletOwner=p?.id;walletQueue=null;paintReward()}if(p&&friendsOwner!==p.id){friendsData=read('renkio-friends:'+p.id,{friends:[],incoming:[],outgoing:[],invites:[]});friendsOwner=p.id;friendFlow=null;renderFriends()}if(p){$('name').value=p.name;save('renkio-name',p.name)}$('accountName').textContent=p?.name||'Misafir';$('accountId').textContent=p?'ID '+(p.tag||'…'):'';$('accountKind').textContent=p?.guest?t('Misafir'):p?.providers?.includes('google.com')?'Google':t('Hesap');$('nickname').value=p?.name||$('name').value;if(accounts.nativeMode){let note=$('accountDialog').querySelector('.account-state-note');if(!note){note=node('small','account-state-note');$('accountKind').after(note)}note.textContent=p?.guest?(locale().startsWith('en')?'Guest · connect an account to keep your progress':'Misafir · ilerlemeni korumak için hesabını bağla'):(p?.email||'');}$('guestNote').classList.toggle('hidden',!!p&&!p.guest);$('logoutAccount').classList.toggle('hidden',!p||p.guest);$('authOptions').classList.toggle('hidden',!!p&&!p.guest);$('deleteAccount').classList.toggle('hidden',!p);renderProfileButton();if(p){homePreparation=refreshWallet().catch(()=>{});syncPush(p,accounts.accountToken,api,preferences).catch(()=>{})}if(view==='home')homePreparation=Promise.allSettled([homePreparation,refreshOpenGames()]);if(p){tutorialRestoring++;restoreRoomSession().catch(()=>{}).finally(()=>tutorialRestoring--)}if(p){syncAvatar().catch(()=>{});refreshFriends().catch(()=>{})}else{friendsOwner=null;friendsData={friends:[],incoming:[],outgoing:[],invites:[]};renderFriends()}});
 if(accounts.nativeMode){
  const english=()=>locale().startsWith('en'),say=(tr,en)=>english()?en:tr;
  window.addEventListener('renkio-account-required',()=>{if($('accountDialog').open)return;closeDialogs();$('accountWelcome').querySelector('[data-auth-title]').textContent=say('İlerlemeni koru','Keep your progress');$('accountWelcome').querySelector('[data-auth-copy]').textContent=say('Hesabını bağlayarak başka cihazdan da devam edebilirsin.','Connect an account to continue on another device.');$('welcomeGoogle').textContent=say('Google ile devam et','Continue with Google');$('welcomeEmail').textContent=say('E-posta ile giriş','Sign in with email');$('welcomeGuest').textContent=say('Misafir oyna','Play as guest');modal('accountWelcome')});
@@ -204,7 +203,7 @@ async function requestHint(){
  if(!active()||coachingBusy)return;const revision=game.revision,myEpoch=epoch;coachingBusy=true;
  try{let move;if(coaching?.revision===revision&&coaching.placements)move=coaching;
  else if(local&&game.practiceHint?.revision===revision){move=game.practiceHint.move}
- else if(local){if(!hintAllowed(game,me,accounts.profile?.id==='775891289432'))throw Error(t('Bu maçta iki ipucunu kullandın.'));move=await findBotMove(game.board,game.players[me].hand,game.experimental||Object.keys(game.board).length?0:game.opening,{experimental:game.experimental,bonusCells:game.bonusCells,thorough:true});if(epoch!==myEpoch||game.revision!==revision)return;if(move){useHint(game,me);game.practiceHint={revision,move};saveSolo()}}
+ else if(local){move=await findBotMove(game.board,game.players[me].hand,game.experimental||Object.keys(game.board).length?0:game.opening,{experimental:game.experimental,bonusCells:game.bonusCells,thorough:true});if(epoch!==myEpoch||game.revision!==revision)return;if(move){game.practiceHint={revision,move};saveSolo()}}
  else{const hintSession={...session};const result=await walletChange({item:'hint',consume:true},async()=>{if(epoch!==myEpoch||game?.revision!==revision)throw Error('Masa değişti. İpucun kullanılmadı.');return api('supports/hint',{...hintSession,accountToken:await accounts.accountToken()},25000)},v=>v.wallet);move=result.hint;if(epoch===myEpoch&&game?.revision===revision&&result.hintUses)game.hintUses=result.hintUses;paintReward()}
  if(epoch!==myEpoch||game.revision!==revision)return;
  coaching=move?{...move,revision}:{revision,placements:null};if(move){pending=hintDraft(move);badDraft=false;selected=null;swapping=false;swapIds.clear();$('coach').classList.add('hidden');renderBoard();board.keepInView();saveSolo();sound.play('select');return}$('coachText').textContent=move?`${move.placements.length} taş · ${move.score} puan. Tahtada denemek ister misin?`:'Uygun hamle bulunamadı. İpucun kullanılmadı.';
@@ -223,7 +222,7 @@ function render(){if(isTileDragging()){renderBoard();return}if(local&&game?.time
  const result=pending.length?validate(game.board,p.hand,pending,game):null;$('previewScore').textContent=swapping?`${swapIds.size} taş değiştirilecek`:result&&!result.error?`+${result.score} puan`:mine?'':'';$('previewScore').title=mine?'Hamle puanı':'Özel deneme; sıra gelince onaylayabilirsin';if(!pending.length&&!swapping)$('previewScore').textContent='';$('previewScore').classList.toggle('has-score',!!result&&!result.error);$('moveError').textContent='';gameFeel.preview(pending.length,result?.score||0,!swapping&&!!result&&!result.error);
  setButton('commit',swapping?'Değiştir':'Oyna',swapping?'swap':'check');$('commit').setAttribute('aria-label',swapping?'Seçilen taşları değiştir':'Hamleyi oyna');$('commit').classList.toggle('waiting',game.turn!==me&&!game.over);$('commit').disabled=!mine||(swapping?!swapIds.size:!pending.length);$('undo').disabled=!planning||(!pending.length&&!swapping);setButton('exchange',swapping?'Vazgeç':'Taş değiştir',swapping?'close':'swap');$('exchange').disabled=!mine||!(local?game.bag.length:game.bagCount)||!Object.keys(game.board).length;setButton('pass','Pas geç','skip');$('pass').classList.remove('hidden');$('pass').disabled=!mine;
  renderJokerControl();if(chatIsOpen())updateChatComposer();renderLastMove();$('history').replaceChildren();if(!game.history.length)$('history').append(node('p','history-empty','Henüz hamle yok.'));for(const [index,h] of game.history.slice(0,60).entries())$('history').append(historyEntry(h,index));renderBoard();reactToGame(game,{animateScore:false});
- if(local&&game.over)rememberCompleted({code:'solo',me,game,seats:[{playerId:accounts.profile?.id,name:game.players[0].name},{playerId:'miko',name:game.players[1].name,bot:true}]});if(game.over&&!visualLocked()&&finishedRevision!==game.revision){finishedRevision=game.revision;saveSolo();const outcomes=gameOutcomes(game),w=game.players.filter((p,i)=>outcomes[i]==='win'||outcomes[i]==='draw'),winnerSeat=w.length?game.players.indexOf(w[0]):me,portraitPlayer=game.players[winnerSeat];$('winner').textContent=w.length>1?'Bu oyun berabere!':w.length?w[0].name+' kazandı!':'Oyun bitti';$('winnerSubtitle').textContent=game.rackPenaltyApplied?t('Elde kalan her taş: −1 puan'):'';const winnerArt=playerAvatar(portraitPlayer.name,winnerSeat,'',winnerSeat===me,local&&winnerSeat===1?MIKO_AVATAR:room?.seats[winnerSeat]?.avatar,local&&winnerSeat===1?'miko':room?.seats[winnerSeat]?.playerId||portraitPlayer.name);$('winnerPortrait').replaceChildren(winnerArt);setTimeout(()=>playCharacter(winnerArt,outcomes[winnerSeat]||'draw'),80);$('finalScores').replaceChildren();[...game.players].sort((a,b)=>Number(['win','draw'].includes(outcomes[game.players.indexOf(b)]))-Number(['win','draw'].includes(outcomes[game.players.indexOf(a)]))||b.score-a.score).forEach((p,i)=>{const row=node('div','final-score'+(!i?' first':''));row.append(node('span','',`${i+1}. ${p.name}`),node('b','',`${p.score} puan`));$('finalScores').append(row)});$('again').classList.remove('hidden');setButton('again',room?.matchmaking?'Rakip bul':local?'Tekrar oyna':'Yeni masa','refresh');if(gameOutcomes(game)[me]==='win'){sound.play('win');confetti()}else sound.play('select');modal('finish')}
+ if(local&&game.over)rememberCompleted({code:'solo',me,game,seats:[{playerId:accounts.profile?.id,name:game.players[0].name},{playerId:'miko',name:game.players[1].name,bot:true}]});if(game.over&&!visualLocked()&&finishedRevision!==game.revision){finishedRevision=game.revision;saveSolo();const outcomes=gameOutcomes(game),w=game.players.filter((p,i)=>outcomes[i]==='win'||outcomes[i]==='draw'),winnerSeat=w.length?game.players.indexOf(w[0]):me,portraitPlayer=game.players[winnerSeat];$('winner').textContent=w.length>1?'Bu oyun berabere!':w.length?w[0].name+' kazandı!':'Oyun bitti';showGuestLinkPrompt(game);$('winnerSubtitle').textContent=game.rackPenaltyApplied?t('Elde kalan her taş: −1 puan'):'';const winnerArt=playerAvatar(portraitPlayer.name,winnerSeat,'',winnerSeat===me,local&&winnerSeat===1?MIKO_AVATAR:room?.seats[winnerSeat]?.avatar,local&&winnerSeat===1?'miko':room?.seats[winnerSeat]?.playerId||portraitPlayer.name);$('winnerPortrait').replaceChildren(winnerArt);setTimeout(()=>playCharacter(winnerArt,outcomes[winnerSeat]||'draw'),80);$('finalScores').replaceChildren();[...game.players].sort((a,b)=>Number(['win','draw'].includes(outcomes[game.players.indexOf(b)]))-Number(['win','draw'].includes(outcomes[game.players.indexOf(a)]))||b.score-a.score).forEach((p,i)=>{const row=node('div','final-score'+(!i?' first':''));row.append(node('span','',`${i+1}. ${p.name}`),node('b','',`${p.score} puan`));$('finalScores').append(row)});$('again').classList.remove('hidden');setButton('again',room?.matchmaking?'Rakip bul':local?'Tekrar oyna':'Yeni masa','refresh');if(gameOutcomes(game)[me]==='win'){sound.play('win');confetti()}else sound.play('select');modal('finish')}
 }
 function rememberJokerChoice(id){const p=pending.find(t=>t.id===id);if(p&&game.players[me].hand.find(t=>t.id===id)?.joker)jokerChoice={c:p.c,s:p.s}}
 function place(id,pos){rememberJokerChoice(id);if(!canPlan()||swapping)return;if(!board.contains(pos)){toast('Tahta sınırına ulaştın.','error');return}const idx=pending.findIndex(p=>p.x===pos.x&&p.y===pos.y);if(idx>=0&&(!id||pending[idx].id===id)){selected=pending[idx].id;rememberJokerChoice(selected);pending.splice(idx,1);badDraft=false;render();return true}if(game.board[key(pos.x,pos.y)]||idx>=0){toast('Bu kare dolu.','error');return}if(!game.players[me].hand.some(t=>t.id===id))return;pending=pending.filter(p=>p.id!==id);const tile=game.players[me].hand.find(t=>t.id===id);pending.push({id,...pos,...(tile?.joker?{...jokerChoice}:{})});badDraft=false;selected=null;const planned=validate(game.board,game.players[me].hand,pending,game);gameFeel.place(pending.length,planned.score||0,!planned.error);render();return true}
@@ -336,7 +335,37 @@ function archived(){return read(archiveKey(),[])}
 function mergeArchive(matches){const all=new Map(archived().map(m=>[m.id,m]));for(const m of matches)all.set(m.id,m);save(archiveKey(),[...all.values()].sort((a,b)=>b.at-a.at));renderArchive()}
 function rememberCompleted(v){if(v.code==='solo'||!v.game?.over||!accounts.profile)return;v.game.matchId??=v.code==='solo'?'solo:'+soloAlertId:v.code+':legacy';if(v.seats[v.me]?.playerId!==accounts.profile.id)return;const record=matchRecord({...v,updated:Date.now()});if(record&&!archived().some(m=>m.id===record.id))mergeArchive([record])}
 async function refreshArchive(){const id=accounts.profile?.id;if(!id)return;const result=await api('history',{accountToken:await accounts.accountToken()},20000);if(accounts.profile?.id===id)mergeArchive(result.matches)}
-function renderArchive(){const host=$('matchArchiveList');if(!host)return;host.replaceChildren();const list=competitiveMatches(archived(),accounts.profile?.id);$('matchArchive').classList.toggle('hidden',!list.length);for(const m of list.slice(0,30)){const own=m.players.find(p=>p.id===accounts.profile?.id);if(!own)continue;const rivals=m.players.filter(p=>p!==own),b=node('button','saved-match'),label=node('span','',rivals.map(p=>p.name).join(', '));label.append(node('small','',new Date(m.at).toLocaleDateString(locale())+' · '+t(own.won?(m.players.filter(p=>p.won).length>1?'Berabere':'Kazandın'):'Kaybettin')));b.append(label,node('strong','',m.players.map(p=>p.score).join(' : ')));b.dataset.outcome=matchOutcome(m,accounts.profile?.id);if(b.dataset.outcome==='win')label.insertAdjacentHTML('afterbegin',icon('trophy'));b.onclick=()=>openMatch(m);host.append(b)}}
+function renderArchive(){
+ const host=$('matchArchiveList');
+ if(!host)return;
+ host.replaceChildren();
+ const id=accounts.profile?.id,list=competitiveMatches(archived(),id);
+ $('matchArchive').classList.toggle('hidden',!list.length);
+ for(const match of list.slice(0,30)){
+  const rivals=match.players.filter(player=>player.id!==id);
+  const names=rivals.map(player=>player.name).join(', ');
+  const row=node('button','saved-match archive-match');
+  const copy=node('span','archive-copy'),name=node('span','archive-name',names);
+  name.title=names;
+  const outcome=matchOutcome(match,id);
+  const result=t(outcome==='win'?'Kazandın':outcome==='draw'?'Berabere':'Kaybettin');
+  copy.append(name,node('small','',new Date(match.at).toLocaleDateString(locale())+' · '+result));
+  const marker=node('span','archive-result');
+  marker.setAttribute('aria-hidden','true');
+  if(outcome!=='draw')marker.innerHTML=icon('trophy');
+  const scores=node('strong','archive-scores');
+  for(const [index,player] of match.players.entries()){
+   if(index)scores.append(document.createTextNode(' : '));
+   const value=node('span',player.won&&outcome!=='draw'?'archive-winner':'',String(player.score));
+   value.title=player.name;
+   scores.append(value);
+  }
+  row.dataset.outcome=outcome;
+  row.append(copy,marker,scores);
+  row.onclick=()=>openMatch(match);
+  host.append(row);
+ }
+}
 function profileDialog(title){const origin=document.body.dataset.page;if(view==='home'&&document.body.dataset.page==='friends')showHub('home',true);closeDialogs();const d=document.createElement('dialog');d.className='profile-dialog';const top=node('div','drawer-heading'),close=node('button','icon-button');close.setAttribute('aria-label','Kapat');close.innerHTML=icon('close');close.onclick=()=>{d.close();d.remove();if(origin==='friends')showHub('friends',true)};top.append(node('h2','',title),close);d.append(top);d.addEventListener('cancel',()=>{d.remove();if(origin==='friends')showHub('friends',true)});document.body.append(d);d.showModal();return d}
 function openMatch(m){const d=profileDialog('Maç geçmişi');for(const p of m.players){const b=node('button','saved-match'),label=node('span','',p.name);if(p.tag&&p.name!=='Player '+p.tag)label.append(node('small','','Player '+p.tag));b.append(playerAvatar(p.name,0,'',false,null,p.id),label,node('strong','',String(p.score)));b.onclick=()=>{d.close();d.remove();if(p.id===accounts.profile?.id)editAvatar();else openRival(p.id,p.name)};d.append(b)}const area=node('div','match-board-view'),content=node('div','match-board-content');content.innerHTML=finalBoardSvg(m.board);area.append(content);const controls=node('div','snapshot-controls');let zoom=1;for(const [glyph,label,factor]of [['minus','Tahtayı uzaklaştır',1/1.4],['target','Tahtayı sığdır',0],['plus','Tahtayı yakınlaştır',1.4]]){const b=node('button','icon-button');b.innerHTML=icon(glyph);b.setAttribute('aria-label',label);b.onclick=()=>{zoom=factor?Math.max(1,Math.min(12,zoom*factor)):1;content.style.width=zoom*100+'%';content.style.height=zoom*100+'%'};controls.append(b)}d.classList.add('match-detail-dialog');d.append(area,controls)}
 
@@ -376,15 +405,52 @@ function knownPlayerTag(id){return id===accounts.profile?.id?accounts.profile.ta
 function displayHand(){return (game?.players[me].hand||[]).map(t=>t.joker?{...t,...(pending.find(p=>p.id===t.id)||jokerChoice)}:t)}
 function renderHomeIdentity(){renderHomeTable();const host=$('homePortrait');if(!host)return;host.replaceChildren(playerAvatar(accounts.profile?.name||'Sen',0,'',true));const label=accounts.profile?.tag?'Player '+accounts.profile.tag:'';$('homePlayerId').textContent=label===accounts.profile?.name?'':label;}
 function paintReward(){
- $('jokerBalance').textContent=wallet.diamonds||0;$('claimReward').disabled=!EXPERIMENTAL||!wallet.available;setButton('claimReward',wallet.available===null?'Yükleniyor':wallet.available?'Topla':'Toplandı',wallet.available?'gift':'check');
- const host=$('rewardDays');host.replaceChildren();const claimed=wallet.claimedDays||0,active=claimed>0&&wallet.available===false&&claimed%5===0?5:claimed%5;for(let i=0;i<5;i++){const n=node('span','reward-day'+(i===active&&wallet.available?' current':'')+(i<active?' active':'')),coin=node('i');coin.innerHTML=icon('diamond');n.append(coin,node('b','',locale().startsWith('en')?'Day '+(i+1):(i+1)+'. Gün'),node('small','',((i+1)*10)+' '+t('elmas')));host.append(n)}
+ const streakDay=wallet.streakDay;
+ const ready=Number.isInteger(streakDay)&&streakDay>=1&&streakDay<=7&&typeof wallet.available==='boolean';
+ const available=ready&&wallet.available,english=locale().startsWith('en');
+ $('jokerBalance').textContent=wallet.diamonds||0;
+ $('claimReward').disabled=!EXPERIMENTAL||!available;
+ setButton('claimReward',!ready?'Yükleniyor':available?'Ödülü al':'Toplandı',ready&&!available?'check':'gift');
+ const host=$('rewardDays');
+ host.setAttribute('aria-label',english?'Seven-day reward streak':'Yedi günlük ödül serisi');
+ host.replaceChildren();
+ for(let day=1;day<=7;day++){
+  const grand=day===7,received=ready&&(day<streakDay||day===streakDay&&!available);
+  const today=available&&day===streakDay;
+  const state=received?'received':today?'today':'waiting';
+  const dayLabel=english?'Day '+day:day+'. Gün';
+  const value=wallet.rewardAmounts?.[day-1]??(grand?50:10);
+  const title=grand?(english?'Grand Prize':'Büyük Ödül'):dayLabel;
+  const dayStatus=received?(english?'Claimed':'Toplandı'):today?(english?'Today':'Bugün'):(english?'Upcoming':'Bekliyor');
+  const slot=node('li','reward-day'+(grand?' grand':'')),coin=node('span','reward-coin');
+  slot.dataset.rewardState=state;
+  slot.setAttribute('aria-label',[dayLabel,grand?title:'',value+' '+t('elmas'),dayStatus].filter(Boolean).join(', '));
+  if(today)slot.setAttribute('aria-current','step');
+  coin.setAttribute('aria-hidden','true');
+  coin.innerHTML=icon(grand?'gift':'diamond');
+  if(received){const check=node('span','reward-check');check.innerHTML=icon('check');coin.append(check)}
+  slot.append(node('span','reward-day-meta',today?dayStatus:''),coin,node('b','reward-day-label',dayLabel),node('small','reward-day-value',String(value)));
+  if(grand)slot.append(node('span','reward-grand-label',title));
+  host.append(slot);
+ }
  if(!EXPERIMENTAL)$('rewardStatus').textContent='Deneysel ödüller kapalı';
 }
 const referralCode=new URL(location.href).searchParams.get('ref');
 if(/^\d{5}$/.test(referralCode||''))save('renkio-referral',referralCode);
 let referralRequest=null;
 async function refreshWallet(){if(!EXPERIMENTAL||!accounts.profile)return;const owner=accounts.profile.id;await walletQueue?.tail.catch(()=>{});const version=walletQueue?.version||0;await registerIncomingReferral();const result=await api('rewards',{accountToken:await accounts.accountToken()},20000);if(owner!==accounts.profile?.id||version!==(walletQueue?.version||0)||walletQueue?.jobs.length)return;wallet=result;save('renkio-wallet:'+owner,result);walletOwner=owner;paintReward();if(result.octoberGift&&!read('renkio-october-gift:'+owner)){save('renkio-october-gift:'+owner,true);$('rewardStatus').textContent='Ekim hediyesi: +500 mücevher';toast('Ekim hediyen: 500 mücevher hesabına eklendi.','success')}if(game)renderJokerControl()}
-$('claimReward').onclick=()=>{if(!wallet.available)return;const amount=wallet.nextAmount||((wallet.claimedDays||0)%5+1)*10;const task=walletChange({claim:true},async()=>api('rewards/claim',{accountToken:await accounts.accountToken()}));$('rewardStatus').textContent=amount+' '+t('elmas eklendi');sound.play('win');task.catch(e=>{toast(e.message,'error');refreshWallet().catch(()=>{})})};
+$('claimReward').onclick=async()=>{
+ if(!wallet.available||!wallet.streakDay)return;
+ const amount=wallet.nextAmount;
+ const owner=accounts.profile?.id;
+ $('rewardStatus').textContent='';
+ try{
+  await walletChange({claim:true},async()=>api('rewards/claim',{accountToken:await accounts.accountToken()}));
+  if(owner!==accounts.profile?.id)return;
+  $('rewardStatus').textContent=locale().startsWith('en')?amount+' gems added':amount+' elmas eklendi';
+  sound.play('win');
+ }catch(e){toast(e.message,'error');refreshWallet().catch(()=>{})}
+};
 
 $('homePortrait').onclick=null;$('homePortraitEdit').onclick=()=>editAvatar();$('editName').onclick=()=>openAccount();
 function showHub(page,immediate=false){
@@ -408,7 +474,7 @@ function closeSupports(){const n=$('supportsMenu');if(!n)return;n.classList.add(
 function paintSupportMenu(){if(!game)return;const p=game.players[me];const remainingHints=Math.max(0,2-(game.hintUses?.[me]||0));
  $('ownedJokers').textContent=p?.jokerUsed?t('Kullanıldı')+' (0/1)':wallet.inventory?.joker?'1/1 '+t('Hazır'):t('Mağaza');
  $('ownedHints').textContent=accounts.profile?.id==='775891289432'?t('Hazır'):!remainingHints?t('Kullanıldı')+' (0/2)':!local&&!wallet.inventory?.hint?t('Mağaza'):remainingHints+'/2 '+t('Hazır');
- $('chooseJoker').disabled=!active()||!!p?.jokerUsed||swapping;const hintCached=coaching?.revision===game.revision&&coaching.placements||local&&game.practiceHint?.revision===game.revision;const hintLimited=!hintAllowed(game,me,accounts.profile?.id==='775891289432');$('chooseHint').disabled=!active()||coachingBusy||swapping||hintLimited&&!hintCached;$('chooseTime').classList.toggle('hidden',(!game.turnSeconds||game.turnSeconds>=43200));$('chooseTime').disabled=!active()||game.timeSupportUsed?.[me]===(game.turnSerial||0);$('timeSupportLabel').textContent=t(game.timeSupportUsed?.[me]===(game.turnSerial||0)?'Kullanıldı':'1 elmas · turda 1 kez');$('supportStatus').textContent=p?.jokerUsed?t('Bu maçtaki jokerini kullandın.'):!active()?t('Kendi sıranda kullan'):'';}
+ $('chooseJoker').disabled=!active()||!!p?.jokerUsed||swapping;const hintCached=coaching?.revision===game.revision&&coaching.placements||local&&game.practiceHint?.revision===game.revision;const hintLimited=!local&&!hintAllowed(game,me,accounts.profile?.id==='775891289432');$('chooseHint').disabled=!active()||coachingBusy||swapping||hintLimited&&!hintCached;$('chooseTime').classList.toggle('hidden',(!game.turnSeconds||game.turnSeconds>=43200));$('chooseTime').disabled=!active()||game.timeSupportUsed?.[me]===(game.turnSerial||0);$('timeSupportLabel').textContent=t(game.timeSupportUsed?.[me]===(game.turnSerial||0)?'Kullanıldı':'1 elmas · turda 1 kez');$('supportStatus').textContent=p?.jokerUsed?t('Bu maçtaki jokerini kullandın.'):!active()?t('Kendi sıranda kullan'):'';}
 $('useJoker').onclick=async()=>{const open=$('supportsMenu').classList.contains('hidden');$('supportsMenu').classList.toggle('hidden',!open);$('useJoker').setAttribute('aria-expanded',String(open));if(!open)return;paintSupportMenu();sound.play('support');try{await refreshWallet();paintSupportMenu()}catch(e){$('supportStatus').textContent=t(e.message)}};
 $('chooseHint').onclick=()=>{closeSupports();if(!local&&!wallet.inventory?.hint&&coaching?.revision!==game?.revision){openShop();return}requestHint()};
 $('chooseTime').onclick=()=>{if(!active()||(wallet.diamonds||0)<1)return;const source=game,owner={...session},actor=me,candidate=structuredClone(game),wasLocal=local;try{extendTurn(candidate,actor,Date.now()+(local?0:serverOffset))}catch(e){toast(e.message,'error');return}game=candidate;closeSupports();render();sound.play('support');walletChange({price:1},async()=>{const token=await accounts.accountToken();if(wasLocal){const value=await api('supports/time/practice',{accountToken:token,receipt:'time-'+(candidate.matchId||'practice')+'-'+(candidate.turnSerial||0)});if(game===candidate)saveSolo();return value}const value=await api('supports/time',{...owner,price:1,accountToken:token});if(session?.room===owner.room&&view==='game')receive(value);return api('rewards',{accountToken:token})}).catch(e=>{if(game===candidate){game=source;if(local)saveSolo();render()}toast(e.message,'error');refreshWallet().catch(()=>{})})};
@@ -515,6 +581,47 @@ function addGiftControls(dialog,id){
 }
 
 let directPeer=null,directRequest=0,directRows=[],directPolling=false;const directPeople=new Map(),olderHistoryControl=$('olderDirect');
+function showGuestLinkPrompt(finishedGame){
+ const account=accounts.profile;
+ const panel=$('finish');
+ panel.querySelector('.guest-link-prompt')?.remove();
+ if(!account?.guest||!account.id||!finishedGame?.matchId)return;
+ const key='renkio-first-match-link:'+account.id;
+ const firstMatch=read(key,null);
+ if(firstMatch&&firstMatch!==finishedGame.matchId)return;
+ if(!firstMatch)save(key,finishedGame.matchId);
+ const prompt=node('div','guest-link-prompt');
+ const english=locale()==='en-GB';
+ prompt.append(node('p','',english?'Keep your progress safe by linking your Google account.':'İlerlemeni kaybetmemek için Google hesabını bağla.'));
+ const link=node('button','button button-purple full',english?'Continue with Google':'Google ile giriş yap');
+ link.type='button';
+ link.onclick=()=>run(async()=>{
+  if(accounts.nativeMode){await accounts.googleLogin();prompt.remove();return}
+  await goHome();
+  openAccount();
+ });
+ prompt.append(link);
+ $('finishHome').before(prompt);
+}
+const directGift=node('button','icon-button direct-gift');
+directGift.type='button';
+directGift.setAttribute('aria-label',t('Hediye gönder'));
+directGift.innerHTML=icon('gift');
+directGift.onclick=()=>{
+ if(!directPeer||!accounts.profile?.id)return;
+ const dialog=node('dialog','profile-dialog');
+ const close=node('button','button',t('Kapat'));
+ close.type='button';
+ close.onclick=()=>dialog.remove();
+ dialog.addEventListener('cancel',()=>dialog.remove());
+ dialog.append(node('h2','',t('Hediye gönder')));
+ addGiftControls(dialog,directPeer);
+ dialog.querySelector('details').open=true;
+ dialog.append(close);
+ document.body.append(dialog);
+ dialog.showModal();
+};
+$('directComposer').insertBefore(directGift,$('directComposer').querySelector('button'));
 function drawDirect(){if(directPeer)save('renkio-direct:'+accounts.profile?.id+':'+directPeer,directRows);if(directPeer)chatReads.update(directChatKey(accounts.profile.id,directPeer),directRows,m=>m.from!==accounts.profile.id,true);const host=$('directMessages'),bottom=host.scrollHeight-host.scrollTop-host.clientHeight<60;host.replaceChildren(olderHistoryControl);let day='';for(const m of outbox().merge(directScope(),directRows)){const date=new Date(m.at),label=date.toLocaleDateString(locale(),{day:'numeric',month:'long'});if(label!==day){day=label;host.append(node('div','conversation-date',label))}const row=node('div','direct-message'+(m.from===accounts.profile?.id?' own':''));if(m.kind==='gift'){row.classList.add('message-gift');const present=node('span','gift-message-icon');present.innerHTML=icon('gift');row.append(present,node('strong','',giftLabel(m,t)),node('span','','Hediye'))}else row.append(node('span','',m.text));row.append(node('small','',new Date(m.at).toLocaleTimeString(locale(),{hour:'2-digit',minute:'2-digit'})));if(m.from!==accounts.profile?.id&&m.kind!=='gift'){row.tabIndex=0;row.setAttribute('role','button');row.onclick=()=>openMessageActions({...m,name:$('directName').textContent,direct:true});row.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();row.click()}}}delivery(row,m);host.append(row)}if(bottom)host.scrollTop=host.scrollHeight;olderHistoryControl.classList.toggle('hidden',directRows.length<100)}
 function drawConversations(conversations){const host=$('conversationList');host.replaceChildren();for(const c of conversations){const b=node('button','conversation-row'),copy=node('span','conversation-copy');directPeople.set(c.playerId,c);copy.append(node('strong','',c.name),node('span','conversation-preview',giftLabel(c.last,t)));const at=node('time','conversation-time',new Date(c.last.at).toLocaleTimeString(locale(),{hour:'2-digit',minute:'2-digit'}));b.append(playerAvatar(c.name,0,'',false,c.avatar,c.playerId),copy,at);b.onclick=()=>openDirect(c.playerId);host.append(b)}if(!conversations.length)host.append(node('p','empty-state',t('Henüz mesaj yok.')))}
 async function openMessages(){directPeer=null;directRequest++;$('directConversation').classList.add('hidden');$('conversationList').classList.remove('hidden');const request=directRequest;drawConversations(read('renkio-conversations:'+accounts.profile?.id,[]));try{await accounts.ensureAccount();const v=await api('messages/list',{accountToken:await accounts.accountToken()});if(request!==directRequest)return;save('renkio-conversations:'+accounts.profile?.id,v.conversations);drawConversations(v.conversations)}catch(e){if(request===directRequest)$('conversationList').textContent=t(e.message)}}

@@ -1,6 +1,17 @@
 // Turkish is the source language. Exact copy and anchored message templates only;
 // player names and free-form chat are never sent to a translation service.
-let language='tr';try{language=localStorage.getItem('renkio-language')==='en'?'en':'tr'}catch{}
+export function initialLanguage(preference, region){
+ if(preference==='tr'||preference==='en')return preference;
+ return region==='TR'?'tr':'en';
+}
+let savedLanguage;
+try{savedLanguage=localStorage.getItem('renkio-language')}catch{}
+let deviceRegion;
+try{
+ deviceRegion=globalThis.RenkioNative?.deviceRegion?.()
+  ?? new Intl.Locale(globalThis.navigator?.language||'en').region;
+}catch{}
+let language=initialLanguage(savedLanguage,deviceRegion);
 export const locale=()=>language==='en'?'en-GB':'tr-TR';
 export const EN={'Bağlantı kurulamadı. İşlemini yeniden deneyebilirsin.':'Could not connect. You can retry your action.','Açılış için gerekli sayıda taş oyna.':'Play the required number of opening tiles.','Taş değişimi geçerli değil.':'This tile exchange is not valid.','Bu maçta iki ipucunu kullandın.':'You have used both hints in this match.','Yeniden dene':'Retry','Mesaj gönderilemedi. Yeniden dene.':'Message could not be sent. Try again.','Karakter yerine dönene kadar bekle.':'Wait for the character to return.','Başlık':'Headwear','Alındı':'Owned','Şaşırdı':'Surprised','Öfkelendi':'Angry','Aksesuarlar':'Accessories','Başka masaya geç?':'Switch tables?','Mevcut masan dağılacak. Yeni davete geçmek istiyor musun?':'Your current table will be disbanded. Join the new invitation?','Mevcut masadan ayrılıp yeni davete geçmek istiyor musun?':'Leave your current table and join the new invitation?','Davete geç':'Join invitation',"Masayı dağıt":"Disband table","Masayı dağıt?":"Disband this table?","Masadan ayrıl?":"Leave this table?","Davetler kapanacak ve herkes ana menüye dönecek.":"Invitations will close and everyone will return home.","Masa sahipliği diğer oyuncuya geçecek.":"Another player will become the host.","Bu masaya davet edilerek tekrar katılabilirsin.":"You can rejoin this table with an invitation.","Lobi mesajı":"Lobby message","Aksesuarsız":"None","Gözlük":"Glasses","Papyon":"Bow tie","Şapka":"Cap","Taç":"Crown","Ücretsiz":"Free","Yeni masa":"New table","Masadan ayrıldın.":"You left the table.","Masa dağıtıldı.":"The table was disbanded.",
  'Bağlı':'Connected','Nasıl oynanır?':'How to play','Masan hazır':'Your table is ready','Masam':'My table','Masaya dön':'Return to table','Masa kur':'Create table','Açık oyunlarım':'My active games','Takma ad':'Nickname','Arkadaşlar':'Friends','Hesap':'Account','Oyna':'Play','Çevrim içi':'Online','Antrenman':'Practice','Rakip bul':'Find opponent','Yeni rakiplerle eşleş':'Meet new opponents','Masa kodu ile katıl':'Join with a table code','Katıl':'Join','Miko ile oyna':'Play with Miko','Antrenmana devam et':'Resume practice','30 sn':'30 sec','1 dk':'1 min','2 dk':'2 min','12 saat':'12 hours','Tur süresi':'Turn timer','Oyuna dön':'Resume game','GÜNLÜK ÖDÜL':'DAILY REWARD','Her gün 10 elmas':'10 gems every day','Desteklerini sen seç.':'Choose your own boosts.','elmas':'gems','Topla':'Claim','Toplandı':'Claimed','Yükleniyor':'Loading','Yükleniyor…':'Loading…','Maç geçmişim':'Match history','Tümünü gör':'View all','Liderlik':'Leaderboard','Sen ve arkadaşların':'You and your friends','İstatistikler':'Statistics','Maçların':'Your matches','Daha fazla':'More','Daha Fazla':'More','Mağaza':'Shop','Günlük ödül':'Daily reward','Ayarlar':'Settings','Gizlilik':'Privacy','Deneysel sürüm · Bonus ve joker':'Experimental · Bonuses and wild tiles','Ana Sayfa':'Home','Bekleme odası':'Waiting room','Özel masa':'Private table','Masa kodu':'Table code','MASA KODU':'TABLE CODE','Paylaş':'Share','OYUNCULAR':'PLAYERS','Başlat':'Start','Ana menü':'Main menu','ARKADAŞLARLA':'WITH FRIENDS','MIKO İLE ANTRENMAN':'PRACTICE WITH MIKO','EŞLEŞME':'MATCH','Oyun akışı':'Move history','Sıra sende!':'Your turn!','Sıra sende':'Your turn','Senin sıran':'Your turn','Şimdi oynuyor':'Playing now','Rakip oynuyor':'Opponent’s turn','Rakibin oynuyor.':'Your opponent is playing.','Bir taş seç, masada bir yere dokun.':'Choose a tile, then tap the board.','taş':'tiles','Joker':'Wild tile','Maç başına 1':'1 per match','Maç başına en fazla 1':'At most 1 per match','İpucu':'Hint','En iyi hamleyi bul':'Find a strong move','+30 saniye':'+30 seconds','Maçta 1 kez ücretsiz':'Free once per match','Kullanıldı':'Used','Kendi sıranda kullan':'Use on your turn','TAŞLARIN':'YOUR TILES','Bir taş seç':'Choose a tile','Mesaj yaz':'Write a message','Hamleni hazırla':'Plan your move','Hamleyi oyna':'Play move','Geri al':'Recall all','Karıştır':'Shuffle','Tüyo':'Hint','Taş değiştir':'Exchange tiles','Pas geç':'Pass turn','Hamleyi dene':'Try this move','Sohbet':'Chat',
@@ -47,8 +58,10 @@ const templates=[
  [/^Açılışta en büyük grubunu, (\d+) taşı oynamalısın\.$/,n=>`Play your largest matching group of ${n} tiles to open.`]
 ];
 export function t(value){if(language!=='en'||typeof value!=='string')return value;const key=value.trim();if(EN[key])return value.replace(key,EN[key]);for(const [pattern,fn]of templates){const m=key.match(pattern);if(m)return value.replace(key,fn(...m.slice(1)))}return value}
+Object.assign(EN,{'Ödülü al':'Claim reward','Yedi günlük ödül serisi':'Seven-day reward streak'});
 export function addTranslations(copy){Object.assign(EN,copy)}
-export function setLanguageForTest(value){language=value==='en'?'en':'tr'}
+export function setLanguage(value){language=value==='en'?'en':'tr'}
+export {setLanguage as setLanguageForTest};
 export function installLanguage(){
  document.documentElement.lang=language;
  const select=document.getElementById('languageSelect');if(select)select.value=language;

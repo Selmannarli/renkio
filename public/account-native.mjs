@@ -1,5 +1,4 @@
 import {requestApiJson} from './network.mjs';
-import {fixedNickname} from './identity-policy.mjs';
 const bridge=window.RenkioNative,pending=new Map();let listener=()=>{},restoration,readyUid=null,generation=0,working=false,choiceWaiters=[];
 export let profile;try{profile=JSON.parse(localStorage.getItem('renkio-profile')||'null')}catch{profile=null}
 function request(action,data={},timeout=30000){return new Promise((resolve,reject)=>{const id=crypto.randomUUID(),timer=setTimeout(()=>{pending.delete(id);reject(Object.assign(Error('Giriş işlemi zaman aşımına uğradı. Yeniden dene.'),{code:'auth/network-request-failed'}))},timeout);pending.set(id,{resolve,reject,timer});try{bridge.accountRequest(id,action,JSON.stringify(data))}catch(e){pending.delete(id);clearTimeout(timer);reject(e)}})}
@@ -21,7 +20,7 @@ async function chooseCandidate(action,data){if(working)throw Error('Giriş işle
  }catch(e){await request('cancelCandidate').catch(()=>{});throw e}finally{working=false}}
 export function googleLogin(){return chooseCandidate('google',{})}
 export async function emailAccount(email,password,register){if(password.length<8)throw Error('Şifre en az 8 karakter olmalı.');email=email.trim();if(!register)return chooseCandidate('emailCandidate',{email,password});await restore();generation++;const next=await request('emailRegister',{email,password});restoration=Promise.resolve(next);return refresh(next)}
-export async function setNickname(value){await ensureAccount();if(fixedNickname(profile?.id))throw Error('Bu hesabın takma adı sabittir.');const name=String(value).trim();if(name.length<2||name.length>24)throw Error('Takma ad 2–24 karakter olmalı.');const token=(await request('token')).token;await api('mobile-accounts/nickname',{accountToken:token,name});await request('nickname',{name});generation++;return refresh(await request('state'))}
+export async function setNickname(value){await ensureAccount();const name=String(value).trim();if(name.length<2||name.length>24)throw Error('Takma ad 2–24 karakter olmalı.');const token=(await request('token')).token;await api('mobile-accounts/nickname',{accountToken:token,name});await request('nickname',{name});generation++;return refresh(await request('state'))}
 export async function resetPassword(email){if(!email.trim())throw Error('E-posta adresini yaz.');await request('passwordReset',{email:email.trim()})}
 export async function logout(){generation++;readyUid=null;cancelChoice();const next=await request('logout');restoration=Promise.resolve(next);return publish(null)}
 export async function reauthenticate(email,password){await request('reauthenticate',{email,password})}
