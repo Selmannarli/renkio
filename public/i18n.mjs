@@ -47,6 +47,7 @@ const templates=[
  [/^Açılışta en büyük grubunu, (\d+) taşı oynamalısın\.$/,n=>`Play your largest matching group of ${n} tiles to open.`]
 ];
 export function t(value){if(language!=='en'||typeof value!=='string')return value;const key=value.trim();if(EN[key])return value.replace(key,EN[key]);for(const [pattern,fn]of templates){const m=key.match(pattern);if(m)return value.replace(key,fn(...m.slice(1)))}return value}
+Object.assign(EN,{'Ödülü al':'Claim reward','Yedi günlük ödül serisi':'Seven-day reward streak'});
 export function addTranslations(copy){Object.assign(EN,copy)}
 export function setLanguage(value){language=value==='en'?'en':'tr'}
 export {setLanguage as setLanguageForTest};

@@ -29,7 +29,7 @@ test('random squares stay from 4 through 36 cells from center, include every kin
  assert.deepEqual(JSON.parse(JSON.stringify(a)),a);
 });
 test('daily rewards use server Berlin calendar, accrue and prevent repeat claim across reload and DST',()=>{
- const p={};const before=Date.parse('2026-10-24T21:59:59Z'),after=Date.parse('2026-10-24T22:00:00Z');assert.equal(claimReward(p,before).diamonds,10);const copy=JSON.parse(JSON.stringify(p));assert.throws(()=>claimReward(copy,before),/zaten/);assert.equal(rewardView(copy,after).available,true);assert.equal(claimReward(copy,after).diamonds,30);
+ const p={};const before=Date.parse('2026-10-24T21:59:59Z'),after=Date.parse('2026-10-24T22:00:00Z'),next=Date.parse('2026-10-25T23:00:00Z');assert.equal(claimReward(p,before).diamonds,10);const copy=JSON.parse(JSON.stringify(p));assert.throws(()=>claimReward(copy,before),/zaten/);assert.equal(rewardView(copy,after).available,true);assert.equal(claimReward(copy,after).diamonds,20);assert.equal(claimReward(copy,next).streakDay,3);
 });
 test('each player has at most one joker per match; preparation is idempotent and an invalid move never uses it',()=>{
  const g=createGame(['a','b'],{experimental:true});g.turn=0;const j=prepareJoker(g,0,'j');assert.equal(prepareJoker(g,0,'different').id,j.id);assert.throws(()=>play(g,0,[{id:'j',x:1,y:1,c:0,s:0}]),/ortadaki/);assert.equal(g.players[0].jokerUsed,undefined);play(g,0,[{id:'j',x:0,y:0,c:0,s:0}]);assert.equal(g.players[0].jokerUsed,true);assert.throws(()=>prepareJoker(g,0,'next'),/kullandın/);assert.equal(prepareJoker(g,1,'other').id,'other');assert.equal(g.players[0].hand.filter(t=>!t.joker).length,6);

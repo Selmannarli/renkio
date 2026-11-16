@@ -1,11 +1,50 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {claimReward,dailyRewardAmount} from '../rewards.mjs';
+import {claimReward,rewardView} from '../rewards.mjs';
 import {sendDirect,directMessages,conversationList,migrateRoomMessages,conversationAllowed} from '../conversations.mjs';
 import {stateDocuments} from '../durable-state.mjs';
 import {makeBonusBoard} from '../public/bonus-rules.mjs';
-test('daily reward cycles 10 through 50 without allowing double claims',()=>{
- const p={};let total=0;for(let i=0;i<11;i++){const at=Date.UTC(2026,10,1+i,12);const value=dailyRewardAmount(i);total+=value;const v=claimReward(p,at);assert.equal(v.diamonds,total);assert.equal(v.nextAmount,dailyRewardAmount(i+1));assert.throws(()=>claimReward(p,at))}
+const rewardDate=day=>Date.UTC(2026,10,day,12);
+test('six daily rewards of 10 and a grand prize of 50 cycle without allowing double claims',()=>{
+ const profile={},awards=[10,10,10,10,10,10,50];
+ let total=0;
+ for(let i=0;i<=awards.length;i++){
+  const at=rewardDate(i+1),day=i%awards.length,view=rewardView(profile,at);
+  assert.deepEqual(view.rewardAmounts,awards);
+  assert.equal(view.available,true);
+  assert.equal(view.streakDay,day+1);
+  assert.equal(view.nextAmount,awards[day]);
+  total+=awards[day];
+  const claimed=claimReward(profile,at);
+  assert.equal(claimed.diamonds,total);
+  assert.equal(claimed.streakDay,day+1);
+  assert.equal(claimed.available,false);
+  assert.equal(claimed.nextAmount,awards[(day+1)%awards.length]);
+  assert.throws(()=>claimReward(structuredClone(profile),at),/zaten/);
+ }
+ assert.equal(total,120);
+});
+test('a missed Berlin calendar day restarts the streak and preserves balance and claim history',()=>{
+ const profile={};
+ claimReward(profile,rewardDate(1));
+ claimReward(profile,rewardDate(2));
+ assert.equal(rewardView(profile,rewardDate(4)).streakDay,1);
+ const claimed=claimReward(profile,rewardDate(4));
+ assert.equal(claimed.streakDay,1);
+ assert.equal(claimed.diamonds,30);
+ assert.equal(claimed.claimedDays,3);
+});
+test('legacy claim history cannot duplicate a reward or fabricate a full streak after migration',()=>{
+ const profile={economy:{version:2,diamonds:340,inventory:{joker:4,hint:2},lastClaim:'2026-11-01',claimedDays:64,receipts:[]}};
+ assert.equal(rewardView(profile,rewardDate(1)).available,false);
+ assert.equal(rewardView(profile,rewardDate(1)).streakDay,1);
+ assert.throws(()=>claimReward(profile,rewardDate(1)),/zaten/);
+ assert.equal(rewardView(profile,rewardDate(2)).streakDay,2);
+ const claimed=claimReward(profile,rewardDate(2));
+ assert.equal(claimed.diamonds,350);
+ assert.deepEqual(claimed.inventory,{joker:4,hint:2});
+ assert.equal(claimed.claimedDays,65);
+ assert.equal(rewardView(structuredClone(profile),rewardDate(3)).streakDay,3);
 });
 const state=()=>({profiles:{a:{name:'A'},b:{name:'B'},c:{name:'C'}},friends:[{from:'a',to:'b',status:'accepted'}],matches:[]});
 test('direct conversation is private, receipt-idempotent and survives removal of friendship',()=>{

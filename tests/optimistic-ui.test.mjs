@@ -1,5 +1,13 @@
 import test from 'node:test';import assert from 'node:assert/strict';import {OptimisticQueue,walletProjection,hintDraft,projectAction,projectFriends} from '../public/optimistic-ui.mjs';import {createGame,validate,play} from '../public/engine.mjs';
 const delay=()=>new Promise(r=>setTimeout(r,0));
+test('daily claim projects the seventh-day prize once and preserves the highlighted slot',()=>{
+ const wallet={diamonds:60,inventory:{joker:0,hint:0},balance:0,available:true,claimedDays:6,streakDay:7,nextAmount:50,rewardAmounts:[10,10,10,10,10,10,50]};
+ const projected=walletProjection(wallet,{claim:true});
+ assert.deepEqual(projected,{...wallet,diamonds:110,available:false,claimedDays:7,nextAmount:10});
+ assert.deepEqual(walletProjection(projected,{claim:true}),projected);
+ const stale={...wallet,rewardAmounts:undefined};
+ assert.deepEqual(walletProjection(stale,{claim:true}),stale);
+});
 test('queued wallet operations project immediately, then rebase each acknowledgement',async()=>{let state={diamonds:20,inventory:{joker:0,hint:0}},release;const q=new OptimisticQueue(()=>state,v=>state=v);const a=q.stage(v=>walletProjection(v,{item:'joker',price:5}),()=>new Promise(r=>release=r));const b=q.stage(v=>walletProjection(v,{item:'hint',price:5}),async()=>({diamonds:10,inventory:{joker:1,hint:1}}));assert.equal(state.diamonds,10);assert.deepEqual(state.inventory,{joker:1,hint:1});await delay();release({diamonds:15,inventory:{joker:1,hint:0}});await Promise.all([a,b]);assert.equal(state.diamonds,10);assert.equal(state.inventory.hint,1)});
 test('failure removes only its projection, keeping later queued writes',async()=>{let state={diamonds:20,inventory:{joker:0,hint:0}};const q=new OptimisticQueue(()=>state,v=>state=v),a=q.stage(v=>walletProjection(v,{item:'joker',price:5}),async()=>{throw Error('offline')}),b=q.stage(v=>walletProjection(v,{item:'hint',price:5}),async()=>({diamonds:15,inventory:{joker:0,hint:1}}));await assert.rejects(a,/offline/);await b;assert.equal(state.diamonds,15);assert.deepEqual(state.inventory,{joker:0,hint:1})});
 test('late responses cannot overwrite a different signed-in account',async()=>{let owner='a',state={n:0},release;const q=new OptimisticQueue(()=>state,v=>state=v,()=>owner),job=q.stage(v=>({n:v.n+1}),()=>new Promise(r=>release=r));await delay();owner='b';state={n:99};release({n:1});await job;assert.deepEqual(state,{n:99})});
