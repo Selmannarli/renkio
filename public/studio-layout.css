@@ -439,8 +439,110 @@ body[data-theme=day] .avatar-dialog .avatar-save { color:#fff!important; backgro
 .avatar-dialog .accessory-shelf{display:flex;overflow-x:auto;justify-content:flex-start;padding:7px 0;gap:6px;scroll-snap-type:x proximity}
 .avatar-dialog .accessory-item{flex:0 0 calc((100% - 12px)/3);min-height:102px;padding:6px!important;gap:3px;scroll-snap-align:start;font-size:10px}
 .avatar-dialog .accessory-model{width:52px;height:52px}
-.avatar-dialog .avatar-sync-status{flex:none;border:0;background:transparent;color:var(--studio-muted);font:700 11px Nunito,sans-serif;min-height:24px;padding:3px;text-align:center;cursor:default}
-.avatar-dialog .avatar-sync-status:empty{display:none}.avatar-dialog .avatar-sync-status[data-state=error]{color:#e8879a;cursor:pointer}.avatar-dialog .avatar-sync-status[data-state=saved]{color:#57b58c}
+.avatar-dialog {
+ --studio-insufficient:#ffacbc;
+ --studio-toast-surface:#362541;
+ --studio-toast-text:#ffedf7;
+ --studio-toast-action:#e7cff7;
+ --studio-toast-action-ink:#45255c;
+}
+body[data-theme=day] .avatar-dialog {
+ --studio-insufficient:#a22948;
+ --studio-toast-surface:#fff6fb;
+ --studio-toast-text:#462942;
+ --studio-toast-action:#eddff8;
+ --studio-toast-action-ink:#542f71;
+}
+body[data-theme] .avatar-dialog .accessory-item[data-unaffordable=true]>small {
+ color:var(--studio-insufficient)!important;
+ font-weight:900;
+}
+body[data-theme] .avatar-dialog .accessory-item[data-unaffordable=true]::after {
+ color:var(--studio-insufficient)!important;
+}
+.avatar-dialog .accessory-item[data-pending-purchase=true] {
+ outline:2px solid #a96fcb;
+ outline-offset:-2px;
+}
+.avatar-dialog .avatar-footer {
+ position:sticky;
+ inset-block-end:0;
+ z-index:3;
+ flex:none;
+ width:100%;
+ padding-block-start:8px;
+ border-block-start:1px solid var(--studio-border);
+}
+.avatar-dialog .avatar-footer .avatar-save {
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ width:100%;
+ min-height:48px!important;
+ padding:10px 12px;
+ border-radius:14px;
+ font-size:14px;
+ font-weight:900;
+ text-align:center;
+ line-height:1.2;
+ white-space:normal;
+}
+.avatar-dialog .avatar-toast {
+ position:absolute;
+ inset-block-start:58px;
+ inset-inline:0;
+ z-index:6;
+ display:flex;
+ align-items:center;
+ justify-content:space-between;
+ gap:10px;
+ width:max-content;
+ max-width:calc(100% - 24px);
+ min-height:48px;
+ margin-inline:auto;
+ box-sizing:border-box;
+ padding:6px 7px 6px 12px;
+ border:1px solid var(--studio-border);
+ border-radius:15px;
+ background:var(--studio-toast-surface);
+ color:var(--studio-toast-text);
+ box-shadow:0 12px 30px #150b2529;
+ animation:avatar-toast-in 180ms cubic-bezier(.2,.8,.2,1) both;
+}
+.avatar-dialog .avatar-toast[data-state=leaving] {
+ animation:avatar-toast-out 220ms ease-in both;
+ pointer-events:none;
+}
+.avatar-dialog .avatar-toast-message {
+ min-width:0;
+ font:800 13px/1.28 Nunito,system-ui,sans-serif;
+ overflow-wrap:anywhere;
+}
+.avatar-dialog .avatar-toast-action {
+ flex:none;
+ max-width:48%;
+ min-height:36px;
+ padding:5px 9px;
+ border:0;
+ border-radius:9px;
+ background:var(--studio-toast-action);
+ color:var(--studio-toast-action-ink);
+ cursor:pointer;
+ font:900 11px/1.15 Nunito,system-ui,sans-serif;
+ white-space:normal;
+}
+@keyframes avatar-toast-in {
+ from { opacity:0; transform:translateY(-7px); }
+ to { opacity:1; transform:translateY(0); }
+}
+@keyframes avatar-toast-out {
+ from { opacity:1; transform:translateY(0); }
+ to { opacity:0; transform:translateY(-4px); }
+}
+@media(prefers-reduced-motion:reduce) {
+ .avatar-dialog .avatar-toast { animation:none; }
+ .avatar-dialog .avatar-toast[data-state=leaving] { animation:none; opacity:0; }
+}
 @media(max-height:680px){.avatar-dialog .character-stage{--portrait-size:96px}.avatar-dialog .drawer-heading{min-height:36px}.avatar-dialog .drawer-heading>.icon-button{width:36px!important;height:36px!important;min-height:36px!important;flex-basis:36px}}
 
 .profile-presence{display:block;text-align:center;color:var(--muted,#bba8cc);font-size:12px;margin:6px 0 10px}
