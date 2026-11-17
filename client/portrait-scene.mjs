@@ -60,7 +60,7 @@ export class CharacterPortraits{
    const rect=art.getBoundingClientRect();if(rect.bottom<=0||rect.top>=innerHeight||rect.width<1||rect.height<1)continue;
    const touching=r.touch&&(now<r.touch.until||now-r.touch.start<(TOUCH_DURATIONS[r.touch.kind]||0)||Math.abs(r.touch.sx)+Math.abs(r.touch.sy)+Math.abs(r.touch.yaw-r.touch.syaw)>.002);
    const idle=!!art.closest('#scores,.home-portrait,.avatar-preview,#winnerPortrait'),active=r.mood!=='idle',animate=!!touching||!reduced&&(idle||active);alive||=animate;
-   if(!r.dirty&&!this.dirty&&(!animate||now-r.last<(active?15:32)))continue;
+   const hero=!!art.closest('.avatar-preview,.home-portrait,#winnerPortrait,.character-hero');if(!r.dirty&&!this.dirty&&(!animate||now-r.last<(active||hero?15:32)))continue;
    const overscan=art.closest('#scores')?1.35:1,basePixels=Math.max(48,Math.min(Math.floor(384/overscan),Math.ceil(Math.max(rect.width,rect.height)*Math.min(devicePixelRatio||1,1.5)))),pixels=Math.round(basePixels*overscan);r.canvas.classList.toggle('portrait-overscan',overscan>1);
    if(r.canvas.width!==pixels||r.canvas.height!==pixels){r.canvas.width=r.canvas.height=pixels}
    const entry=this.model(r.face,r.colour,r.accessory,r.colours),root=entry.root,preview=entry.accessories.get(art.dataset.accessoryPreview),bust=!preview&&!!art.closest('#scores,.home-portrait,.friend-entry,.leader-row,.mini-player'),center=preview?.center||(bust?entry.headCenter:entry.center),radius=preview?.radius||(bust?entry.headRadius:entry.radius);

@@ -69,7 +69,44 @@ function bend(rig,index,elbow=0,wrist=0){
  const fore=rig.forearms?.[index],hand=rig.hands?.[index];
  rotate(fore,-elbow,0,0);rotate(hand,0,wrist*.3,(index?1:-1)*wrist);
 }
-function idle(rig,time,face){
+// Shared life layer. Soft, volume-preserving breathing, a slow weight shift,
+// follow-through on ears, tails and antennae, livelier eyes and an occasional
+// cute beat (tilt + smile, or a tiny hop). Everything is a pure function of time,
+// so portraits, seated players and seeked previews stay deterministic.
+const hash=n=>{const x=Math.sin(n*127.1+311.7)*43758.5453;return x-Math.floor(x)};
+function alive(rig,root,time,face,phase,period){
+ const rigid=face===1,seated=rig.pose==='seated';
+ const breath=Math.sin(time*1.9+face*.6),sway=Math.sin(time*.82+face*1.3),swayLag=Math.sin(time*.82+face*1.3-.75);
+ // breathing: chest rises while the body narrows a touch (volume preserved)
+ const sq=rigid?.35:1;stretch(rig.body,1-breath*.0075*sq,1+breath*.017*sq,1-breath*.006*sq);
+ if(rig.hips&&!rigid)stretch(rig.hips,1+breath*.004,1-breath*.003,1+breath*.004);
+ move(rig.head,0,breath*.0045,0);
+ // weight shift: the actor leans, the head counter-balances, appendages follow late
+ if(!seated)rotate(root,0,0,sway*.014);
+ rotate(rig.head,0,0,-sway*.022);
+ (rig.ears||[]).forEach((n,i)=>rotate(n,0,0,(i?1:-1)*(.025+swayLag*.035)+breath*.012));
+ rotate(rig.tail,0,swayLag*.12,Math.sin(time*1.7)*.035);
+ rotate(rig.accent,0,0,swayLag*.05+breath*.015);
+ if(face!==5)(rig.arms||[]).forEach((n,i)=>rotate(n,0,0,(i%2?1:-1)*(.02+breath*.018)));
+ // cute beat: a head tilt with a little smile, once per cycle
+ const tiltSide=hash(Math.floor((time+face*.73)/period)+face)>.5?1:-1;
+ const tilt=envelope(phase,period*.70,period*.70+.45,period*.70+1.45,period*.70+2.0);
+ if(tilt>0){rotate(rig.head,-tilt*.03,tiltSide*tilt*.05,tiltSide*tilt*.11);brow(rig,'happy',tilt*.7);if(tilt>.35)setMouth(rig,'happy')}
+ // second, natural blink; every other cycle it is a quick double blink
+ const cycle=Math.floor((time+face*.73)/period),b2=period*.55;
+ let close=blinkAt(phase,b2);if(cycle%2)close=Math.max(close,blinkAt(phase,b2+.32));
+ if(close>0)blink(rig,close);
+ // eyes dart between a few resting points instead of staring
+ const dart=Math.floor(time*.9+face),dx=(hash(dart)-.5)*.012,dy=(hash(dart+7)-.5)*.006,settle=smooth((time*.9+face)%1/.12);
+ for(const eye of rig.eyes||[])for(const pupil of eye.children.filter(n=>n.name==='Pupil')){pupil.position.x+=dx*settle;pupil.position.y+=dy*settle}
+ // tiny happy hop on alternate cycles (standing only, always above the floor)
+ if(!seated&&cycle%2===1){
+  const at=period*.18,squat=envelope(phase,at,at+.12,at+.16,at+.26),land=envelope(phase,at+.5,at+.56,at+.62,at+.78),up=jump(phase,at+.2,.34,.022);
+  move(root,0,up,0);
+  if(!rigid){stretch(rig.body,1+(squat+land)*.03,1-(squat+land)*.05+up*1.4,1+(squat+land)*.03)}
+ }
+}
+function idle(rig,time,face,root=null){
  const period=[7.1,8.7,7.8,6.9,8.1,8.4][face],phase=((time+face*.73)%period+period)%period;
  let close=blinkAt(phase,1.27,face===2?.075:.026,face===2?.095:.062,face===2?.16:.11);
  if(face===3)close=Math.max(close,blinkAt(phase,1.58));
@@ -97,8 +134,12 @@ function idle(rig,time,face){
   stretch(rig.head,1+breath*.003,1+breath*.006,1);
   (rig.arms||[]).forEach((n,i)=>{rotate(n,Math.sin(time*.85-i*.55)*.018,0,Math.sin(time*.9-i*.7)*.022);rotate(rig.forearms?.[i],0,0,Math.sin(time*1.1-i*.6)*.06)});
  }
+ {const period=[7.1,8.7,7.8,6.9,8.1,8.4][face],phase=((time+face*.73)%period+period)%period;if(root)alive(rig,root,time,face,phase,period)}
 }
-function greet(rig,t,face){
+function greet(rig,t,face,root=null){
+ {const squat=envelope(t,.02,.10,.12,.20),land=envelope(t,.46,.52,.56,.70),hop=jump(t,.16,.32,.03);
+  if(rig.pose!=='seated'&&root)move(root,0,hop,0);
+  if(face!==1)stretch(rig.body,1+(squat+land)*.025,1-(squat+land)*.045+hop*1.2,1+(squat+land)*.025)}
  const engaged=envelope(t,.02,.30,1.30,1.85),lift=key(t,[[0,0],[.14,-.07],[.49,1.24],[1.18,1.24],[1.80,0],[1.85,0]]);
  const wave=key(t,[[0,0],[.42,0],[.64,-.22],[.85,.21],[1.06,-.17],[1.25,.10],[1.60,0],[1.85,0]]);
  blink(rig,blinkAt(t,.16));brow(rig,'happy',engaged*.65);
@@ -133,7 +174,7 @@ function celebrate(rig,root,t,face,duration){
  rotate(rig.head,anticipate*.055-raise*.09,Math.sin(t*3)*raise*.02,Math.sin(t*4)*raise*.025);
  brow(rig,'happy',raise);blink(rig,Math.max(blinkAt(t,.18),blinkAt(t,.83,.15,.08,.15)));
  if(face!==1)stretch(rig.body,1+anticipate*.012,1-anticipate*.022+raise*.01,1+anticipate*.007);
- if(rig.pose!=='seated')move(root,0,jump(t,.43,.42,.05)+jump(t,1.08,.37,.03),0);
+ if(rig.pose!=='seated'){move(root,0,jump(t,.43,.42,.075)+jump(t,1.08,.37,.045),0);const landing=envelope(t,.83,.88,.92,1.05)+envelope(t,1.43,1.48,1.52,1.64)*.7;if(face!==1)stretch(rig.body,1+landing*.035,1-landing*.06,1+landing*.035)}
  if(face!==5){
   const strength=[1,.92,.88,.96,1][face];
   arm(rig,0,(raise*1.52+pulse)*strength,-raise*.12);arm(rig,1,(raise*1.65+pulse*.8)*strength,-raise*.15);
@@ -301,7 +342,7 @@ export function characterSocialContactPoint(root,mood,camera=null,handSide=null)
 function sampleCharacter(root,{time=0,face=root?.userData?.rig?.face??root?.userData?.face??0,mood='idle',elapsed=0,reduced=false,aimPower=0,aimDirection=1}={}){
  const state=stateFor(root);if(!state)return false;resetCharacter(root);const rig=state.rig;
  face=Number.isInteger(face)&&face>=0&&face<6?face:0;time=Number.isFinite(time)?Math.max(0,time):0;elapsed=Number.isFinite(elapsed)?Math.max(0,elapsed):0;
- if(mood==='idle'||typeof mood!=='string'||!Object.hasOwn(CHARACTER_DURATIONS,mood)){if(!reduced)idle(rig,time,face);return !reduced}
+ if(mood==='idle'||typeof mood!=='string'||!Object.hasOwn(CHARACTER_DURATIONS,mood)){if(!reduced)idle(rig,time,face,root);return !reduced}
  const emotion=animationEmotion(mood),duration=CHARACTER_DURATIONS[mood];
  setMouth(rig,emotion);
  const browEmotion=mood==='appleHit'||mood==='lossAngry'||mood==='lossStomp'?'angry':emotion;
@@ -341,7 +382,7 @@ function sampleCharacter(root,{time=0,face=root?.userData?.rig?.face??root?.user
  }else if(mood==='angry'){
 const a=envelope(elapsed,0,.25,1.1,1.8);setMouth(rig,'sad');brow(rig,'angry',a);rotate(rig.head,.08*a,Math.sin(elapsed*15)*.035*a,0);arm(rig,0,.25*a);arm(rig,1,.25*a);bend(rig,0,a*.75);bend(rig,1,a*.75);if(rig.pose!=='seated')move(root,0,jump(elapsed,.3,.25,.025),0)}
  else if(mood==='draw'){const a=envelope(elapsed,.03,.35,1.15,1.78);brow(rig,'happy',a*.6);rotate(rig.head,-a*.035,a*.04,0);arm(rig,0,a*.25);arm(rig,1,a*.25);bend(rig,0,a*.25);bend(rig,1,a*.25)}
- else if(mood==='surprise'){const a=envelope(elapsed,0,.18,.8,1.5);brow(rig,'happy',a);rotate(rig.head,-.1*a,0,0);rig.facial?.expression('surprise');arm(rig,0,.65*a);arm(rig,1,.65*a);bend(rig,0,a*.35);bend(rig,1,a*.35)}
+ else if(mood==='surprise'){const a=envelope(elapsed,0,.18,.8,1.5),startle=envelope(elapsed,0,.08,.16,.34);if(rig.pose!=='seated')move(root,0,jump(elapsed,.02,.3,.035),0);if(face!==1)stretch(rig.body,1-startle*.03,1+startle*.06,1-startle*.03);brow(rig,'happy',a);rotate(rig.head,-.1*a,0,0);rig.facial?.expression('surprise');arm(rig,0,.65*a);arm(rig,1,.65*a);bend(rig,0,a*.35);bend(rig,1,a*.35)}
  else if(mood==='impact'){
   const t=elapsed,turn=key(t,[[0,0],[.65,0],[1.30,Math.PI],[2.35,Math.PI],[3.1,0],[4.8,0]]),contact=envelope(t,1.42,1.78,1.93,2.30),cheer=envelope(t,2.45,2.95,3.95,4.50),anticip=envelope(t,.8,1.10,1.30,1.58);
   brow(rig,'happy',.75);blink(rig,Math.max(blinkAt(t,.4),blinkAt(t,3.25,.12)));rotate(rig.head,-cheer*.10,contact*.38,cheer*Math.sin(t*5)*.035);arm(rig,0,cheer*1.60+anticip*.25,-cheer*.20);arm(rig,1,cheer*1.72+anticip*.25,-cheer*.20);bend(rig,0,cheer*.55+anticip*.25,cheer*.08);bend(rig,1,cheer*.60+anticip*.25,-cheer*.08);
@@ -354,7 +395,7 @@ const a=envelope(elapsed,0,.25,1.1,1.8);setMouth(rig,'sad');brow(rig,'angry',a);
   bend(rig,1,reach*.70-contact*.38,-contact*.10);
   rotate(rig.head,-reach*.035,reach*.065,contact*-.016);brow(rig,'happy',reach*.35);blink(rig,blinkAt(t,1.42));
  }
- else if(mood==='hello')greet(rig,elapsed,face);
+ else if(mood==='hello')greet(rig,elapsed,face,root);
  else if(emotion==='happy')celebrate(rig,root,elapsed,face,duration);
  else disappointment(rig,elapsed,face,duration);
  return true;
