@@ -163,7 +163,7 @@ export function openAvatarPicker(save,{wallet={},loadWallet=null,buy=null,openSh
   const shelf=d.querySelector('.accessory-shelf');
   if(shelfCategory!==category){
    shelfCategory=category;
-   shelf.replaceChildren(...ACCESSORIES.filter(item=>item.slot===category).map(item=>{
+   shelf.replaceChildren(...ACCESSORIES.filter(item=>item.slot===category&&!item.app).map(item=>{
     const b=document.createElement('button');
     b.type='button';b.className='accessory-item';b.dataset.accessoryChoice=item.id;
     b.innerHTML='<span class="accessory-model">'+avatarArt({face:draft.face,color:draft.color,accessories:[item.id],accessoryColors:draft.accessoryColors})+'</span><span></span><small></small>';

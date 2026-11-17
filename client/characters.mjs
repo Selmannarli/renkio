@@ -3,7 +3,7 @@ import {sculptHead} from './creature-sculpt.mjs';
 import {BAKED_ACCESSORY_FITS} from './accessory-surfaces.mjs';
 import {accessoryFit,REAR_PROFILES} from './character-fit.mjs';
 import {createFacialRig} from './facial-rig.mjs';
-import {characterBodyColour,accessoryList,accessoryColour} from '../public/character-style.mjs';
+import {characterBodyColour,accessoryList,accessoryColour,accessoryById} from '../public/character-style.mjs';
 import * as T from 'three';
 import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
 import {mergeGeometries,mergeVertices} from 'three/addons/utils/BufferGeometryUtils.js';
@@ -203,7 +203,7 @@ export function createCharacter(face=0,colour=0,pose='seated',accessory='none',a
  root.userData.rig={face,pose,facial,rear,head,body:torso,eyes,pupils:eyes.flatMap(e=>e.children.filter(n=>n.name==='Pupil')),lids,arms,forearms,hands,legs:feet,knees,brows:eyebrows,mouth,tail,accent,ears,hips};
  root.userData.pose=pose;
  for(const eye of eyes)for(const pupil of eye.children.filter(n=>n.name==='Pupil'))pupil.scale.setScalar(1.08);
- for(const id of accessoryList(accessory))addAccessory(root,id,accessoryColours);
+ for(const id of accessoryList(accessory))if(!accessoryById(id)?.app)addAccessory(root,id,accessoryColours);
  // Preserve articulation; merge colour details only within each rigid joint.
  for(const parent of [torso,hips,...arms,...forearms,...hands,...feet,...knees,...eyes,...eyebrows])batchColours(parent,{roughness:face===1?.34:.48,metalness:face===1?.08:0});
  bakeRigid(root);root.updateMatrixWorld(true);return root;
