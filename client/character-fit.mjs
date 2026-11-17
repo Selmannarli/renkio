@@ -20,13 +20,14 @@ export const CHARACTER_ACCESSORY_FITS=bases.map(b=>{
  p.astralCrown=fit('head',[b.crown.at[0],b.crown.at[1],b.crown.at[2]],[b.crown.size[0]*1.06,b.crown.size[1]*1.28,b.crown.size[2]*1.04]);
  return p;
 });
-export function accessoryFit(face,id,slot){const p=CHARACTER_ACCESSORY_FITS[face]||CHARACTER_ACCESSORY_FITS[0];return structuredClone(p[id]||p[slot==='neck'?'bow':slot==='face'?'glasses':'cap'])}
+import {accessoryById} from '../public/character-style.mjs';
+export function accessoryFit(face,id,slot=accessoryById(id)?.slot){const p=CHARACTER_ACCESSORY_FITS[face]||CHARACTER_ACCESSORY_FITS[0];return structuredClone(p[id]||p[slot==='neck'?'bow':slot==='face'?'glasses':'cap'])}
 export const REAR_PROFILES=[
- {name:'cloud-cushion',parent:'body',at:[0,.24,-.20],size:[.24,.17,.12],softness:.025},
- {name:'robot-chassis',parent:'body',at:[0,.25,-.235],size:[.42,.29,.12],softness:0},
- {name:'cat-haunch',parent:'body',at:[0,.18,-.17],size:[.26,.22,.16],softness:.035},
- {name:'cyclops-rump',parent:'body',at:[0,.20,-.20],size:[.34,.28,.16],softness:.035},
- {name:'dragon-rump',parent:'body',at:[0,.22,-.20],size:[.23,.17,.12],softness:.025},
- {name:'jelly-bell-folds',parent:'head',at:[0,.76,0],size:[.24,.095,.025],softness:.018,surface:true},
- {name:'star-back',parent:'head',at:[0,.56,-.16],size:[.2,.14,.08],softness:.02}
+ {name:'cloud-cushion',parent:'body',at:[0,.24,-.1],size:[.3,.14,.14],softness:.025},
+ {name:'robot-chassis',parent:'body',at:[0,.24,-.08],size:[.3,.14,.12],softness:0},
+ {name:'cat-haunch',parent:'body',at:[0,.24,-.1],size:[.3,.14,.14],softness:.035},
+ {name:'cyclops-rump',parent:'body',at:[0,.24,-.1],size:[.3,.14,.14],softness:.035},
+ {name:'dragon-rump',parent:'body',at:[0,.24,-.1],size:[.3,.14,.14],softness:.025},
+ {name:'jelly-bell-folds',parent:'head',at:[0,.7,-.05],size:[.3,.1,.14],softness:.018},
+ {name:'star-back',parent:'head',at:[0,.6,-.06],size:[.24,.12,.1],softness:.02}
 ];

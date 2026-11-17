@@ -4,23 +4,23 @@ import * as T from 'three';
 // target. They never translate or scale independently of the skin.
 const cache=new Map();
 const designs=[
- {name:'cloud-bean',at:[0,.53],width:.10,ink:'#5a1f35',brow:'#79529d',browY:1.005,browX:.195,browWidth:.078},
- {name:'robot-display',at:[0,.904],width:.125,ink:'#9dffe6',brow:'#9dffe6',browY:1.221,browX:.182,browWidth:.067},
- {name:'cat-muzzle',at:[0,.81],width:.085,ink:'#5a1f35',brow:'#995a3c',browY:1.265,browX:.192,browWidth:.064},
- {name:'cyclops-grin',at:[0,.668],width:.15,ink:'#4a1a2c',brow:'#277f6c',browY:1.29,browX:0,browWidth:.25},
- {name:'dragon-smile',at:[0,.62],width:.095,ink:'#5a1f35',brow:'#aa7831',browY:1.052,browX:.168,browWidth:.061},
- {name:'jelly-pucker',at:[0,.71],width:.068,ink:'#4a1a3a',brow:'#4c98b4',browY:1.142,browX:.18,browWidth:.067},
- {name:'star-smile',at:[0,.545],width:.085,ink:'#5a1f35',brow:'#b9780f',browY:.865,browX:.15,browWidth:.058}
+ {name:'cloud-bean',at:[0,.752],width:.07,ink:'#4a1f33',brow:'#8a68c4',browY:.965,browX:.14,browWidth:.045},
+ {name:'robot-display',at:[0,.80],width:.08,ink:'#86f4ff',brow:'#86f4ff',browY:.995,browX:.11,browWidth:.045},
+ {name:'cat-muzzle',at:[0,.732],width:.06,ink:'#4a1f33',brow:'#b5652c',browY:.975,browX:.15,browWidth:.045},
+ {name:'cyclops-grin',at:[0,.735],width:.085,ink:'#4a1f33',brow:'#d05a8f',browY:1.055,browX:0,browWidth:.11},
+ {name:'dragon-smile',at:[0,.706],width:.07,ink:'#4a1f33',brow:'#4f9a3e',browY:.995,browX:.15,browWidth:.045},
+ {name:'jelly-pucker',at:[0,.785],width:.055,ink:'#4a1f33',brow:'#3f9bd0',browY:.965,browX:.15,browWidth:.045},
+ {name:'star-smile',at:[0,.61],width:.065,ink:'#4a1f33',brow:'#d9a015',browY:.845,browX:.13,browWidth:.042}
 ];
 const clamp=x=>Math.max(0,Math.min(1,x));
 function mouthShape(face,u,expression){
  const arch=1-u*u,smile=expression==='happy',sad=expression==='sad',surprise=expression==='surprise';
  if(face===1){if(surprise)return {top:.030*Math.sqrt(arch),bottom:-.060*Math.sqrt(arch)};const step=Math.round(u*3)/3,mid=(sad?.034:smile?-.044:-.024)*(1-step*step);return {top:mid+.009,bottom:mid-.009}}
  // A soft open "D" smile: the upper lip barely curves, the lower lip drops.
- const k=face===3?1.45:face===5?.8:1,w=Math.pow(arch,.75);
- if(surprise)return {top:.028*k*Math.sqrt(arch),bottom:-.058*k*Math.sqrt(arch)};
- if(sad)return {top:.018*k*arch+.0045,bottom:.018*k*arch-.0045};
- const curl=(smile?.022:.014)*k,open=(smile?.062:.034)*k;
+ const k=face===3?1.2:1,w=Math.pow(arch,.75);
+ if(surprise)return {top:.02*k*Math.sqrt(arch),bottom:-.04*k*Math.sqrt(arch)};
+ if(sad)return {top:.013*k*arch+.004,bottom:.013*k*arch-.004};
+ const curl=(smile?.017:.012)*k,open=(smile?.042:.014)*k;
  return {top:-curl*arch+.004*u*u,bottom:-curl*arch-open*w};
 }
 function tongueShape(face,u,expression){
@@ -53,7 +53,7 @@ export function createFacialRig(head,face){
   const browSides=face===3?[0]:[-1,1];
   const brows=browSides.map(side=>{
    const point=expression=>(u,edge)=>{
-    const arch=1-u*u,thickness=[.011,.007,.010,.015,.008,.011,.009][face];
+    const arch=1-u*u,thickness=[.007,.006,.007,.008,.007,.007,.007][face];
     let curve=[.016,0,.018,.031,.014,.020,.016][face]*arch;
     if(face===2)curve=.020*(1-Math.abs(u))+.007*side*u;
     if(face===4)curve+=side*u*.007;
@@ -65,7 +65,7 @@ export function createFacialRig(head,face){
    return morphGeometry(point('neutral'),['happy','sad','angry'].map(point),z);
   });
   const details=[];if(face!==1){const tongue=expression=>(u,edge)=>{const t=tongueShape(face,u,expression);return [d.at[0]+u*d.width*.5,d.at[1]+(edge?t.bottom:t.top)]};details.push(morphGeometry(tongue('neutral'),['happy','sad','surprise'].map(tongue),(x,y)=>z(x,y)+.0006))}
-  if(face===3)for(const side of [-1,1]){const tooth=open=>(u,edge)=>[side*.075+u*.02,.662-(edge?(open?.05:.03)*(1-Math.abs(u)*.6):0)];details.push(morphGeometry(tooth(false),[tooth(true),tooth(false),tooth(false)],(x,y)=>z(x,y)+.0007))}
+  if(face===3)for(const side of [-1,1]){const tooth=open=>(u,edge)=>[side*.032+u*.011,.727-(edge?(open?.022:.016)*(1-Math.abs(u)*.7):0)];details.push(morphGeometry(tooth(false),[tooth(true),tooth(false),tooth(false)],(x,y)=>z(x,y)+.0007))}
   geometry={mouth,brows,details};cache.set(key,geometry);
  }
  const mouthRoot=new T.Group();mouthRoot.name='FaceMouth';head.add(mouthRoot);
