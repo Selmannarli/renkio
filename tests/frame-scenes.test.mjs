@@ -20,4 +20,4 @@ test('sitting and leaving the frame reveal the feet; the portrait framing return
  for(const name of Object.keys(FRAME_SCENES)){assert.equal(frameReveal(name,0),0);assert.equal(frameReveal(name,1),1);assert.equal(frameReveal(name,FRAME_SCENES[name]),0)}
 });
 
-test('retired frame scenes cannot stretch or move the production actors',()=>{for(let face=0;face<6;face++){const root=createCharacter(face,0,'standing');captureRest(root);for(const mood of Object.keys(FRAME_SCENES)){animateCharacter(root,{mood,elapsed:3});assert.deepEqual(root.position.toArray(),[0,0,0]);assert.deepEqual(root.scale.toArray(),[1,1,1]);assert.ok(root.userData.rig.arms.every(a=>a.scale.equals(new Vector3(1,1,1))))}disposePerson(root)}});
+test('retired frame scenes cannot stretch or move the production actors',()=>{for(let face=0;face<7;face++){const root=createCharacter(face,0,'standing');captureRest(root);for(const mood of Object.keys(FRAME_SCENES)){animateCharacter(root,{mood,elapsed:3});assert.deepEqual(root.position.toArray(),[0,0,0]);assert.deepEqual(root.scale.toArray(),[1,1,1]);assert.ok(root.userData.rig.arms.every(a=>a.scale.equals(new Vector3(1,1,1))))}disposePerson(root)}});

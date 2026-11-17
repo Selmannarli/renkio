@@ -12,7 +12,7 @@ test('all four chair axes face the table and seated hips share the cushion heigh
  for(let i=0;i<4;i++){const chair=TABLE_SEATS[i],hip=seatPoint(i),front=seatPoint(i,0,0,.4);assert.equal(hip.y,SEAT_HEIGHT);assert.ok(Math.hypot(front.x,front.z)<Math.hypot(chair.x,chair.z));assert.ok(TABLE_TOP>hip.y&&TABLE_TOP<hip.y+.8)}
 });
 test('six seated characters are genuine volumetric geometry with finite normals, no image planes or sprite impostors',()=>{
- for(let face=0;face<6;face++){const model=createSeatedCharacter(face,0),bounds=new THREE.Box3().setFromObject(model);assert.ok(bounds.min.y>-.7);assert.ok(bounds.max.y<1.85);assert.ok(bounds.max.z-bounds.min.z>.5);let triangles=0;
+ for(let face=0;face<7;face++){const model=createSeatedCharacter(face,0),bounds=new THREE.Box3().setFromObject(model);assert.ok(bounds.min.y>-.7);assert.ok(bounds.max.y<1.85);assert.ok(bounds.max.z-bounds.min.z>.5);let triangles=0;
   model.traverse(n=>{assert.ok(!n.isSprite);if(!n.isMesh)return;assert.ok(!n.geometry.isPlaneGeometry);assert.ok(!n.material.map);for(const key of ['position','normal'])for(const value of n.geometry.attributes[key].array)assert.ok(Number.isFinite(value));triangles+=n.geometry.attributes.position.count/3});assert.ok(triangles>1000);assert.ok(model.userData.rig.head);assert.ok(model.userData.rig.arms.length>=2);
  }
 });

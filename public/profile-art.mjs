@@ -3,8 +3,8 @@ import {CHARACTER_TINTS,MIKO_AVATAR,ACCESSORIES,accessoryById,accessoryList,togg
 import {t,locale} from './i18n.mjs';
 import {playCharacter,previewCelebration} from './motion.mjs';
 export function defaultAvatar(seed=''){if(seed==='miko')return {...MIKO_AVATAR};let n=2166136261;for(const ch of String(seed))n=Math.imul(n^ch.charCodeAt(0),16777619)>>>0;return {face:n%6,color:(n>>>4)%7}}
-export function normalizeAvatar(v,seed=''){if(seed==='miko')return {...MIKO_AVATAR};const d=defaultAvatar(seed);const result={face:Number.isInteger(v?.face)&&v.face>=0&&v.face<6?v.face:d.face,color:Number.isInteger(v?.color)&&v.color>=0&&v.color<8?v.color:d.color};const items=accessoryList(v?.accessories??v?.accessory);if(items.length)result.accessories=items;const colours=normalizeAccessoryColours(v?.accessoryColors);if(Object.keys(colours).length)result.accessoryColors=colours;if(v?.animations)result.animations=normalizeAnimationPreferences(v.animations);return result}
-export const AVATAR_NAMES=['Pof','Robot','Kedi','Tepegöz','Ejder','Denizanası'];
+export function normalizeAvatar(v,seed=''){if(seed==='miko')return {...MIKO_AVATAR};const d=defaultAvatar(seed);const result={face:Number.isInteger(v?.face)&&v.face>=0&&v.face<7?v.face:d.face,color:Number.isInteger(v?.color)&&v.color>=0&&v.color<8?v.color:d.color};const items=accessoryList(v?.accessories??v?.accessory);if(items.length)result.accessories=items;const colours=normalizeAccessoryColours(v?.accessoryColors);if(Object.keys(colours).length)result.accessoryColors=colours;if(v?.animations)result.animations=normalizeAnimationPreferences(v.animations);return result}
+export const AVATAR_NAMES=['Pof','Robot','Kedi','Tepegöz','Ejder','Denizanası','Yıldız'];
 export function avatarArt(v,seed=''){
  const {face,color,accessories=[],accessoryColors={},animations}=normalizeAvatar(v,seed),motion=normalizeAnimationPreferences(animations);
  return `<span class="character-art character-${face}" data-character="${face}" data-colour="${color}" data-accessory="${accessories.join(',')||'none'}" data-animation-greeting="${motion.greeting}" data-animation-win="${motion.win}" data-animation-loss="${motion.loss}" data-accessory-colours="${accessoryColourKey(accessoryColors)}" aria-hidden="true"></span>`;
@@ -210,7 +210,7 @@ export function openAvatarPicker(save,{wallet={},loadWallet=null,buy=null,openSh
   cta.textContent=busy?t(pending?'Satın alınıyor…':'Kaydediliyor…'):pending?t('Satın Al')+' ('+roundPrice(pending.price)+')':t('Kaydet ve Çık');
   d.querySelector('.drawer-heading button').disabled=busy;
  };
- for(let i=0;i<6;i++){const b=document.createElement('button');b.type='button';b.className='avatar-option';b.setAttribute('aria-label',t(AVATAR_NAMES[i]));b.onclick=()=>{if(busy)return;draft.face=i;draw()};d.querySelector('.avatar-choices').append(b)}
+ for(let i=0;i<AVATAR_NAMES.length;i++){const b=document.createElement('button');b.type='button';b.className='avatar-option';b.setAttribute('aria-label',t(AVATAR_NAMES[i]));b.onclick=()=>{if(busy)return;draft.face=i;draw()};d.querySelector('.avatar-choices').append(b)}
  for(let i=0;i<8;i++){const b=document.createElement('button');b.type='button';b.className='avatar-color';b.style.background=CHARACTER_TINTS[i].hex||'conic-gradient(#ad86df,#edb32a,#55c7e8,#eb8b53,#ad86df)';b.dataset.original=String(i===0);b.setAttribute('aria-label',t(CHARACTER_TINTS[i].name));b.onclick=()=>{if(busy)return;draft.color=i;draw()};d.querySelector('.avatar-colors').append(b)}
  for(const [i,c]of ACCESSORY_COLOURS.entries()){
   const b=document.createElement('button');b.type='button';

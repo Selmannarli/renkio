@@ -4,23 +4,28 @@ import * as T from 'three';
 // target. They never translate or scale independently of the skin.
 const cache=new Map();
 const designs=[
- {name:'cloud-bean',at:[0,.523],width:.115,ink:'#51315f',brow:'#79529d',browY:1.005,browX:.195,browWidth:.078},
+ {name:'cloud-bean',at:[0,.53],width:.10,ink:'#5a1f35',brow:'#79529d',browY:1.005,browX:.195,browWidth:.078},
  {name:'robot-display',at:[0,.904],width:.125,ink:'#9dffe6',brow:'#9dffe6',browY:1.221,browX:.182,browWidth:.067},
- {name:'cat-muzzle',at:[0,.815],width:.102,ink:'#6f4245',brow:'#995a3c',browY:1.265,browX:.192,browWidth:.064},
- {name:'cyclops-grin',at:[0,.630],width:.158,ink:'#285e50',brow:'#277f6c',browY:1.29,browX:0,browWidth:.25},
- {name:'dragon-smile',at:[.012,.613],width:.103,ink:'#95602a',brow:'#aa7831',browY:1.052,browX:.168,browWidth:.061},
- {name:'jelly-pucker',at:[0,.710],width:.061,ink:'#377f9e',brow:'#4c98b4',browY:1.142,browX:.18,browWidth:.067}
+ {name:'cat-muzzle',at:[0,.81],width:.085,ink:'#5a1f35',brow:'#995a3c',browY:1.265,browX:.192,browWidth:.064},
+ {name:'cyclops-grin',at:[0,.668],width:.15,ink:'#4a1a2c',brow:'#277f6c',browY:1.29,browX:0,browWidth:.25},
+ {name:'dragon-smile',at:[0,.62],width:.095,ink:'#5a1f35',brow:'#aa7831',browY:1.052,browX:.168,browWidth:.061},
+ {name:'jelly-pucker',at:[0,.71],width:.068,ink:'#4a1a3a',brow:'#4c98b4',browY:1.142,browX:.18,browWidth:.067},
+ {name:'star-smile',at:[0,.545],width:.085,ink:'#5a1f35',brow:'#b9780f',browY:.865,browX:.15,browWidth:.058}
 ];
 const clamp=x=>Math.max(0,Math.min(1,x));
 function mouthShape(face,u,expression){
  const arch=1-u*u,smile=expression==='happy',sad=expression==='sad',surprise=expression==='surprise';
- if(surprise&&face!==2)return {top:.030*Math.sqrt(arch),bottom:-.070*Math.sqrt(arch)};
- if(face===0){const mid=(sad?.025:smile?-.035:-.021)*arch;return {top:mid+.004+ (smile?.012*arch:0),bottom:mid-.004-(smile?.038*arch:0)}}
- if(face===1){const step=Math.round(u*3)/3,mid=(sad?.034:smile?-.044:-.019)*(1-step*step);return {top:mid+.009,bottom:mid-.009}}
- if(face===2){const w=-.023*Math.sin(Math.abs(u)*Math.PI);const mid=sad?.014*arch:w;return {top:mid+.003,bottom:mid-.004-((smile||surprise)?.019*arch:0)}}
- if(face===3){const mid=(sad?.022:smile?-.025:-.017)*arch;return {top:mid+.006,bottom:mid-.007-(smile?.073*arch:0)}}
- if(face===4){const mid=(sad?.025:-.028)*arch+(!sad?.012*u:0);return {top:mid+.004,bottom:mid-.004-(smile?.014*arch:0)}}
- const mid=sad?.008:smile?-.009:0;return {top:mid+(smile?.023:.012)*Math.sqrt(arch),bottom:mid-(smile?.035:.020)*Math.sqrt(arch)};
+ if(face===1){if(surprise)return {top:.030*Math.sqrt(arch),bottom:-.060*Math.sqrt(arch)};const step=Math.round(u*3)/3,mid=(sad?.034:smile?-.044:-.024)*(1-step*step);return {top:mid+.009,bottom:mid-.009}}
+ // A soft open "D" smile: the upper lip barely curves, the lower lip drops.
+ const k=face===3?1.45:face===5?.8:1,w=Math.pow(arch,.75);
+ if(surprise)return {top:.028*k*Math.sqrt(arch),bottom:-.058*k*Math.sqrt(arch)};
+ if(sad)return {top:.018*k*arch+.0045,bottom:.018*k*arch-.0045};
+ const curl=(smile?.022:.014)*k,open=(smile?.062:.034)*k;
+ return {top:-curl*arch+.004*u*u,bottom:-curl*arch-open*w};
+}
+function tongueShape(face,u,expression){
+ // Lies inside the lower half of the open mouth, collapsing when the mouth closes.
+ const s=mouthShape(face,u*.5,expression),h=expression==='sad'?0:(s.top-s.bottom)*.42*(1-u*u);return {top:s.bottom+h,bottom:s.bottom+.0015};
 }
 function projector(surfaces,offset=.003){
  const ray=new T.Raycaster(),memo=new Map();
@@ -48,8 +53,8 @@ export function createFacialRig(head,face){
   const browSides=face===3?[0]:[-1,1];
   const brows=browSides.map(side=>{
    const point=expression=>(u,edge)=>{
-    const arch=1-u*u,thickness=[.010,.007,.009,.014,.006,.010][face];
-    let curve=[.014,0,.018,.031,.010,.020][face]*arch;
+    const arch=1-u*u,thickness=[.011,.007,.010,.015,.008,.011,.009][face];
+    let curve=[.016,0,.018,.031,.014,.020,.016][face]*arch;
     if(face===2)curve=.020*(1-Math.abs(u))+.007*side*u;
     if(face===4)curve+=side*u*.007;
     if(expression==='happy')curve+=.009*arch;
@@ -59,12 +64,13 @@ export function createFacialRig(head,face){
    };
    return morphGeometry(point('neutral'),['happy','sad','angry'].map(point),z);
   });
-  const details=[];if(face===3)for(const side of [-1,1]){const tooth=open=>(u,edge)=>[side*.080+u*.022,.616-(edge&&open?.035*(1-Math.abs(u)*.25):0)];details.push(morphGeometry(tooth(false),[tooth(true),tooth(false),tooth(false)],(x,y)=>z(x,y)+.0007))}
+  const details=[];if(face!==1){const tongue=expression=>(u,edge)=>{const t=tongueShape(face,u,expression);return [d.at[0]+u*d.width*.5,d.at[1]+(edge?t.bottom:t.top)]};details.push(morphGeometry(tongue('neutral'),['happy','sad','surprise'].map(tongue),(x,y)=>z(x,y)+.0006))}
+  if(face===3)for(const side of [-1,1]){const tooth=open=>(u,edge)=>[side*.075+u*.02,.662-(edge?(open?.05:.03)*(1-Math.abs(u)*.6):0)];details.push(morphGeometry(tooth(false),[tooth(true),tooth(false),tooth(false)],(x,y)=>z(x,y)+.0007))}
   geometry={mouth,brows,details};cache.set(key,geometry);
  }
  const mouthRoot=new T.Group();mouthRoot.name='FaceMouth';head.add(mouthRoot);
  const mesh=faceMesh(mouthRoot,'Mouth-'+d.name,geometry.mouth,d.ink,face===1);
- const details=geometry.details.map(g=>faceMesh(mouthRoot,'CyclopsTooth',g,'#eee4ce'));
+ const details=geometry.details.map((g,i)=>faceMesh(mouthRoot,face!==1&&i===0?'Tongue':'CyclopsTooth',g,face!==1&&i===0?'#ff7f9a':'#fffaf0'));
  const mouth={};for(const state of ['neutral','happy','sad']){const marker=new T.Group();marker.name='Mouth'+state;marker.visible=state==='neutral';mouthRoot.add(marker);mouth[state]=marker}
  const brows=geometry.brows.map((g,i)=>{const group=new T.Group();group.name='Brow'+i;group.userData.surfaceFace=true;head.add(group);faceMesh(group,'BrowSurface',g,d.brow,face===1);return group});
  const reset=()=>{for(const n of [mesh,...details])n.morphTargetInfluences.fill(0);for(const b of brows)b.children[0].morphTargetInfluences.fill(0)};

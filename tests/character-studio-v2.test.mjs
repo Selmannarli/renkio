@@ -16,7 +16,7 @@ test('outcomes and warnings cannot be interrupted or restarted by repeated taps'
 });
 
 test('all six bare actors have real elbow/wrist joints and no baked-in cosmetic',()=>{
- for(let face=0;face<6;face++){
+ for(let face=0;face<7;face++){
   const root=createCharacter(face),rig=root.userData.rig;
   assert.equal(root.userData.modelVersion,CHARACTER_MODEL_VERSION);
   const mounts=[];root.traverse(n=>{if(n.userData.attachment)mounts.push(n)});assert.equal(mounts.length,0);
@@ -28,7 +28,7 @@ test('all six bare actors have real elbow/wrist joints and no baked-in cosmetic'
 
 test('every colour and compatible cosmetic combination stays mounted to its anatomical slot during motion',()=>{
  const loadouts=['none','glasses','bow','cap','crown','glasses,bow','glasses,bow,cap','glasses,bow,crown'];
- for(let face=0;face<6;face++)for(let colour=0;colour<8;colour++)for(const loadout of loadouts){
+ for(let face=0;face<7;face++)for(let colour=0;colour<8;colour++)for(const loadout of loadouts){
   const root=createCharacter(face,colour,'standing',loadout),rig=root.userData.rig,mounts=[];
   root.traverse(n=>{if(n.userData.attachment)mounts.push(n)});
   assert.deepEqual(mounts.map(n=>n.userData.attachment).sort(),accessoryList(loadout).sort());
@@ -45,7 +45,7 @@ test('every colour and compatible cosmetic combination stays mounted to its anat
 });
 
 test('nested joints restore exactly after long sequences and cross-fades preserve endpoints',()=>{
- for(let face=0;face<6;face++){
+ for(let face=0;face<7;face++){
   const root=createCharacter(face,0,'standing','glasses,bow,cap');resetCharacter(root);
   const rest=captureCharacterPose(root);
   for(let frame=0;frame<300;frame++)animateCharacter(root,{mood:['hello','win','lose','impact','knock'][frame%5],elapsed:(frame%160)/40,time:frame/60});
@@ -61,7 +61,7 @@ test('nested joints restore exactly after long sequences and cross-fades preserv
 });
 
 test('all three glass contacts are inside each fixed portrait and match the actual articulated hand',()=>{
- for(let face=0;face<6;face++)for(const loadout of ['none','glasses,bow,cap']){
+ for(let face=0;face<7;face++)for(const loadout of ['none','glasses,bow,cap']){
   const root=createCharacter(face,0,'standing',loadout),box=new Box3().setFromObject(root.userData.rig.head),center=box.getCenter(new Vector3()),size=box.getSize(new Vector3()),radius=Math.max(size.y*1.08,size.x)*.5,camera=new PerspectiveCamera(31,1,.1,30);
   center.y-=.04;camera.position.copy(center).add(new Vector3(.18,.12,1).normalize().multiplyScalar(radius/Math.sin(camera.fov*Math.PI/360)*1.14));camera.lookAt(center);camera.updateMatrixWorld();
   for(const elapsed of [.42,.76,1.10]){animateCharacter(root,{mood:'knock',elapsed});root.updateMatrixWorld(true);const p=characterContactPoint(root,camera);assert.ok(Math.abs(p.x)<.98&&Math.abs(p.y)<.98,face+': '+p.toArray());assert.ok(p.z>-1&&p.z<1)}

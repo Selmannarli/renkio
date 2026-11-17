@@ -8,7 +8,7 @@ import {normalizeAccessoryColours,accessoryColourKey} from '../public/character-
 
 test('six different mouth and brow designs remain painted onto the head throughout expression blends',()=>{
  const names=new Set(),shapes=new Set();
- for(let face=0;face<6;face++){
+ for(let face=0;face<7;face++){
   const root=createCharacter(face,0,'standing'),rig=root.userData.rig,facial=rig.facial;
   names.add(facial.name);shapes.add(Array.from(facial.mesh.geometry.attributes.position.array).join(','));
   root.updateMatrixWorld(true);const skin=rig.head.children.filter(n=>n.isMesh),ray=new Raycaster();
@@ -28,7 +28,7 @@ test('six different mouth and brow designs remain painted onto the head througho
   assert.deepEqual(facial.mesh.morphTargetInfluences,[0,1,0]);
   disposePerson(root);
  }
- assert.equal(names.size,6);assert.equal(shapes.size,6);
+ assert.equal(names.size,7);assert.equal(shapes.size,7);
 });
 
 test('independent accessory colours survive avatar storage and serialized artwork, with safe legacy defaults',()=>{

@@ -15,5 +15,5 @@ test('all Godot frames passed real-alpha, clean-edge, safe-padding and loop-clos
  }
 });
 test('production portraits request the shared 3D model rather than the retired expression sheets',()=>{
- for(let face=0;face<6;face++){const art=avatarArt({face,color:2});assert.ok(art.includes('data-character="'+face+'"'));assert.ok(art.includes('data-colour="2"'));assert.ok(!/webp|background-image|avatar-image/.test(art))}
+ for(let face=0;face<7;face++){const art=avatarArt({face,color:2});assert.ok(art.includes('data-character="'+face+'"'));assert.ok(art.includes('data-colour="2"'));assert.ok(!/webp|background-image|avatar-image/.test(art))}
 });

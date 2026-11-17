@@ -35,7 +35,7 @@ function puffyStar(){return geometry('puffy-star',()=>{
  for(let side=0;side<2;side++)for(let ring=0;ring<rings;ring++)for(let j=0;j<count;j++){const start=side*(rings+1)*count,a=start+ring*count+j,b=start+(ring+1)*count+j,c=start+(ring+1)*count+(j+1)%count,d=start+ring*count+(j+1)%count;if(side)indices.push(a,c,b,a,d,c);else indices.push(a,b,c,a,c,d)}
  const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(positions,3));g.setIndex(indices);g.computeVertexNormals();return g;
 })}
-function skin(face,colour){const bases=['#a17ae0','#9067c0','#ed9a66','#48b7a9','#f2c75e','#75c8e8'],shift=[0,255/360,95/360,155/360,315/360,40/360,220/360,0][colour]||0;const c=new T.Color(bases[face]);if(colour===7)c.lerp(new T.Color('#b7b4c4'),.72);else c.offsetHSL(shift,0,0);return material('#'+c.getHexString(),face===1?.31:.56,face===1?.17:0)}
+function skin(face,colour){const bases=['#a17ae0','#9067c0','#ed9a66','#48b7a9','#f2c75e','#75c8e8','#ffc22a'],shift=[0,255/360,95/360,155/360,315/360,40/360,220/360,0][colour]||0;const c=new T.Color(bases[face]);if(colour===7)c.lerp(new T.Color('#b7b4c4'),.72);else c.offsetHSL(shift,0,0);return material('#'+c.getHexString(),face===1?.31:.56,face===1?.17:0)}
 
 function bakeRigid(parent){
  for(const child of [...parent.children])if(!child.isMesh)bakeRigid(child);

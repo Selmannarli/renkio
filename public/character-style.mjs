@@ -10,7 +10,7 @@ export const CHARACTER_TINTS=Object.freeze([
  {name:'Yeşil',hex:'#7fc496'},
  {name:'Gri',hex:'#a5aabc'}
 ]);
-export const CHARACTER_BASES=Object.freeze(['#bc9ce7','#9b7ad5','#f1ac79','#70c9ad','#f0bd58','#81cbe0']);
+export const CHARACTER_BASES=Object.freeze(['#a07ef2','#8456e0','#f7803a','#2fae86','#f8b521','#45aef5','#ffbb14']);
 export const MIKO_AVATAR=Object.freeze({face:1,color:0});
 export function characterBodyColour(face,colour){return CHARACTER_TINTS[colour]?.hex||CHARACTER_BASES[face]||CHARACTER_BASES[0]}
 

@@ -80,7 +80,7 @@ function choreography(mood,t,face,seated){
   const a=gate(t,.02,.19,.65,1);p.happy=mood==='draw'?a*.45:0;p.surprise=mood==='surprise'?a:0;p.head=[-a*.10,a*.04,0];arm(-1,a*.55,-a*.12,a*.64);arm(1,a*.63,-a*.12,a*.70);p.secondary=spring(t,.20)*.07;
  }
  // Robot joints stay crisp; organic silhouettes inherit a delayed, damped follow-through.
- const softness=[1,.35,.85,1,.75,1.1][face];p.secondary*=softness;
+ const softness=[1,.35,.85,1,.75,1.1,.9][face];p.secondary*=softness;
  if(seated){p.lift=0;p.legs=[0,0];p.knees=[0,0]}
  return p;
 }

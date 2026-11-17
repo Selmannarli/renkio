@@ -17,13 +17,13 @@ test('account animation choices are finite, safe, serializable and preserve old 
  assert.equal(animationEmotion(null),'neutral');
 });
 test('every selectable greeting, win and loss has a distinct articulated silhouette in each anatomy',()=>{
- for(let face=0;face<6;face++){const root=createCharacter(face,0,'standing');
+ for(let face=0;face<7;face++){const root=createCharacter(face,0,'standing');
   for(const options of Object.values(ANIMATION_OPTIONS)){const seen=new Set();for(const item of options){animateCharacter(root,{mood:item.clip,elapsed:item.duration*.36});seen.add(JSON.stringify(pose(root)))}assert.equal(seen.size,options.length,face+': choices must not be duplicate clips')}
   disposePerson(root);
  }
 });
 test('all new clips seek deterministically, keep actor scale and settle with the intended emotion',()=>{
- for(let face=0;face<6;face++){const root=createCharacter(face,0,'standing');captureRest(root);const baseScale=root.scale.toArray();
+ for(let face=0;face<7;face++){const root=createCharacter(face,0,'standing');captureRest(root);const baseScale=root.scale.toArray();
   for(const [mood,duration]of Object.entries(ANIMATION_DURATIONS)){
    for(let i=0;i<=20;i++){const t=duration*i/20;animateCharacter(root,{mood,elapsed:t,time:t});assert.deepEqual(root.scale.toArray(),baseScale);root.traverse(n=>assert([...n.position,...n.quaternion,...n.scale].every(Number.isFinite),face+'/'+mood));}
    animateCharacter(root,{mood,elapsed:duration*.37});const first=pose(root);animateCharacter(root,{mood,elapsed:duration*.63});animateCharacter(root,{mood,elapsed:duration*.37});assert.deepEqual(pose(root),first);
@@ -33,20 +33,20 @@ test('all new clips seek deterministically, keep actor scale and settle with the
  }
 });
 test('selected outcomes stay seated and reduced motion never moves any joint',()=>{
- for(let face=0;face<6;face++){const root=createCharacter(face,0,'seated');root.position.set(.4,.96,.2);captureRest(root);const base=pose(root);
+ for(let face=0;face<7;face++){const root=createCharacter(face,0,'seated');root.position.set(.4,.96,.2);captureRest(root);const base=pose(root);
   for(const mood of Object.keys(ANIMATION_DURATIONS)){animateCharacter(root,{mood,elapsed:.8,reduced:true});assert.deepEqual(pose(root),base);}
   for(const option of [...ANIMATION_OPTIONS.win,...ANIMATION_OPTIONS.loss]){animateCharacter(root,{mood:option.clip,elapsed:option.duration*.4});assert.deepEqual(root.position.toArray(),[.4,.96,.2]);assert.deepEqual(root.scale.toArray(),[1,1,1]);}
   disposePerson(root);
  }
 });
 test('flight has a tucked held leg pose rather than a translated walk cycle and hops stay in portrait margin',()=>{
- for(let face=0;face<6;face++){const root=createCharacter(face,0,'standing'),r=root.userData.rig;
+ for(let face=0;face<7;face++){const root=createCharacter(face,0,'standing'),r=root.userData.rig;
   animateCharacter(root,{mood:'visitorFly',elapsed:.2});const legs=r.legs.map(n=>n.rotation.toArray().slice(0,3));animateCharacter(root,{mood:'visitorFly',elapsed:.6});assert.deepEqual(r.legs.map(n=>n.rotation.toArray().slice(0,3)),legs);
   for(let i=0;i<=100;i++){animateCharacter(root,{mood:'winHop',elapsed:i*.028});assert(root.position.y>=0&&root.position.y<=.060001)}disposePerson(root);
  }
 });
 test('high-five exposes the actual palm/tentacle endpoint and holds it through contact',()=>{
- for(let face=0;face<6;face++)for(const mood of ['highFiveLeft','highFiveRight']){const root=createCharacter(face,0,'standing');
+ for(let face=0;face<7;face++)for(const mood of ['highFiveLeft','highFiveRight']){const root=createCharacter(face,0,'standing');
   animateCharacter(root,{mood,elapsed:SOCIAL_TIMING.holdStart/1000});const first=characterSocialContactPoint(root,mood);assert(first?.toArray().every(Number.isFinite));
   animateCharacter(root,{mood,elapsed:SOCIAL_TIMING.holdEnd/1000});const last=characterSocialContactPoint(root,mood);assert(first.distanceTo(last)<1e-7,face+'/'+mood+' planted palm');
   assert.equal(ANIMATION_PRIORITIES[mood],5);disposePerson(root);

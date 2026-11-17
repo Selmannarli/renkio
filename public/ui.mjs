@@ -36,8 +36,8 @@ export class Sound {
  glassKnock(){if(!this.enabled)return;this.tone(920,0,.055,'sine',.045);this.tone(1840,.002,.033,'sine',.018);this.tone(260,0,.045,'triangle',.018)}
  character(face,mood='hello'){
   if(['idle','bored','waveLeft','waveRight','curious','pat','tickle'].includes(mood))return;
-  if(!this.enabled||!Number.isInteger(face)||face<0||face>5)return;const now=performance.now();if(now-(this.lastCharacterVoice??-999)<650)return;this.lastCharacterVoice=now;
-  const motifs=[[[330,0,.10,'sine'],[440,.075,.12,'sine']],[[720,0,.045,'triangle'],[960,.06,.045,'sine'],[720,.12,.05,'sine']],[[510,0,.13,'sine'],[465,.08,.12,'sine']],[[150,0,.12,'triangle'],[200,.08,.13,'sine']],[[880,0,.10,'sine'],[1320,.065,.13,'sine']],[[420,0,.075,'sine'],[640,.055,.09,'sine'],[520,.105,.10,'sine']]],factor=['sad','lose'].includes(mood)?.78:['win','celebrate','impact'].includes(mood)?1.12:mood==='angry'?.7:mood==='surprise'?1.24:1;
+  if(!this.enabled||!Number.isInteger(face)||face<0||face>6)return;const now=performance.now();if(now-(this.lastCharacterVoice??-999)<650)return;this.lastCharacterVoice=now;
+  const motifs=[[[330,0,.10,'sine'],[440,.075,.12,'sine']],[[720,0,.045,'triangle'],[960,.06,.045,'sine'],[720,.12,.05,'sine']],[[510,0,.13,'sine'],[465,.08,.12,'sine']],[[150,0,.12,'triangle'],[200,.08,.13,'sine']],[[880,0,.10,'sine'],[1320,.065,.13,'sine']],[[420,0,.075,'sine'],[640,.055,.09,'sine'],[520,.105,.10,'sine']],[[990,0,.06,'sine'],[1180,.05,.07,'sine'],[1480,.11,.09,'sine']]],factor=['sad','lose'].includes(mood)?.78:['win','celebrate','impact'].includes(mood)?1.12:mood==='angry'?.7:mood==='surprise'?1.24:1;
   for(const [frequency,delay,duration,wave]of motifs[face])this.tone(frequency*factor,delay,duration,wave,face===3?.017:.022);
  }
  // Short, original cartoon Foley; no device vibration and no idle soundtrack.

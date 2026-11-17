@@ -6,8 +6,8 @@ import {animateCharacter} from '../client/character-motion.mjs';
 import {accessoryFit,REAR_PROFILES} from '../client/character-fit.mjs';
 
 test('paired rear lobes stay integrated in each body instead of hanging below it',()=>{
- assert.equal(new Set(REAR_PROFILES.map(p=>p.name)).size,6);
- for(let face=0;face<6;face++){
+ assert.equal(new Set(REAR_PROFILES.map(p=>p.name)).size,7);
+ for(let face=0;face<7;face++){
   const root=createCharacter(face,0,'standing'),rig=root.userData.rig,hips=rig.hips;
   assert.equal(hips.children.length,1);assert.equal(hips.userData.lobes,2);
   assert.equal(hips.parent.uuid,(rig.rear.parent==='head'?rig.head:rig.body).uuid);
@@ -22,7 +22,7 @@ test('paired rear lobes stay integrated in each body instead of hanging below it
 });
 
 test('every accessory has an independent anatomy fit and remains attached through gestures',()=>{
- for(let face=0;face<6;face++)for(const headwear of ['cap','crown']){
+ for(let face=0;face<7;face++)for(const headwear of ['cap','crown']){
   const root=createCharacter(face,0,'standing',['glasses','bow',headwear]),rig=root.userData.rig;
   const mounts=['glasses','bow',headwear].map(id=>root.getObjectByName('Accessory-'+id));
   const rest=mounts.map(m=>({p:m.position.toArray(),s:m.scale.toArray()}));

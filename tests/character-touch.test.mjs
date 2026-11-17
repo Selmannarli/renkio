@@ -4,7 +4,7 @@ import {createCharacter,disposePerson} from '../client/characters.mjs';
 import {resetCharacter} from '../client/character-motion.mjs';
 import {applyCharacterTouch} from '../client/character-touch.mjs';
 test('touch reactions remain bounded, repeatable and attached for every character',()=>{
- for(let face=0;face<6;face++){
+ for(let face=0;face<7;face++){
   const root=createCharacter(face,0,'standing',['glasses','bow','cap']),rig=root.userData.rig,accessories=[];
   root.traverse(n=>{if(n.userData.attachment)accessories.push({node:n,p:n.position.clone(),s:n.scale.clone()})});
   for(const kind of ['pat','tickle','curious'])for(let i=0;i<100;i++){
@@ -19,7 +19,7 @@ test('touch reactions remain bounded, repeatable and attached for every characte
 });
 
 test('touch gestures have a readable silhouette even when tapped in the centre',()=>{
- for(let face=0;face<6;face++){
+ for(let face=0;face<7;face++){
   const root=createCharacter(face,0,'standing'),rig=root.userData.rig;
   resetCharacter(root);applyCharacterTouch(root,{kind:'pat',elapsed:.725});assert.ok(Math.abs(rig.head.rotation.z)>.20);
   resetCharacter(root);applyCharacterTouch(root,{kind:'curious',elapsed:.9});assert.ok(Math.abs(rig.head.rotation.z)>.20);

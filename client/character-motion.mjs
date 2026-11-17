@@ -107,7 +107,7 @@ function alive(rig,root,time,face,phase,period){
  }
 }
 function idle(rig,time,face,root=null){
- const period=[7.1,8.7,7.8,6.9,8.1,8.4][face],phase=((time+face*.73)%period+period)%period;
+ const period=[7.1,8.7,7.8,6.9,8.1,8.4,7.4][face],phase=((time+face*.73)%period+period)%period;
  let close=blinkAt(phase,1.27,face===2?.075:.026,face===2?.095:.062,face===2?.16:.11);
  if(face===3)close=Math.max(close,blinkAt(phase,1.58));
  blink(rig,close);
@@ -134,7 +134,7 @@ function idle(rig,time,face,root=null){
   stretch(rig.head,1+breath*.003,1+breath*.006,1);
   (rig.arms||[]).forEach((n,i)=>{rotate(n,Math.sin(time*.85-i*.55)*.018,0,Math.sin(time*.9-i*.7)*.022);rotate(rig.forearms?.[i],0,0,Math.sin(time*1.1-i*.6)*.06)});
  }
- {const period=[7.1,8.7,7.8,6.9,8.1,8.4][face],phase=((time+face*.73)%period+period)%period;if(root)alive(rig,root,time,face,phase,period)}
+ {const period=[7.1,8.7,7.8,6.9,8.1,8.4,7.4][face],phase=((time+face*.73)%period+period)%period;if(root)alive(rig,root,time,face,phase,period)}
 }
 function greet(rig,t,face,root=null){
  {const squat=envelope(t,.02,.10,.12,.20),land=envelope(t,.46,.52,.56,.70),hop=jump(t,.16,.32,.03);
@@ -176,7 +176,7 @@ function celebrate(rig,root,t,face,duration){
  if(face!==1)stretch(rig.body,1+anticipate*.012,1-anticipate*.022+raise*.01,1+anticipate*.007);
  if(rig.pose!=='seated'){move(root,0,jump(t,.43,.42,.075)+jump(t,1.08,.37,.045),0);const landing=envelope(t,.83,.88,.92,1.05)+envelope(t,1.43,1.48,1.52,1.64)*.7;if(face!==1)stretch(rig.body,1+landing*.035,1-landing*.06,1+landing*.035)}
  if(face!==5){
-  const strength=[1,.92,.88,.96,1][face];
+  const strength=[1,.92,.88,.96,1,1,1][face];
   arm(rig,0,(raise*1.52+pulse)*strength,-raise*.12);arm(rig,1,(raise*1.65+pulse*.8)*strength,-raise*.15);
   bend(rig,0,raise*.47,raise*.08);bend(rig,1,raise*.60,-raise*.08);
  }else (rig.arms||[]).forEach((n,i)=>{rotate(n,-raise*.20,0,(i<3?-1:1)*raise*(.38+Math.sin(t*6-i*.65)*.045));rotate(rig.forearms?.[i],0,0,(i<3?-1:1)*raise*.25)});
@@ -403,7 +403,7 @@ const a=envelope(elapsed,0,.25,1.1,1.8);setMouth(rig,'sad');brow(rig,'angry',a);
 
 // The torso is the common motion carrier. Head gestures rotate around the neck,
 // keeping its attachment point fixed instead of turning through the chest.
-const neckHeights=[.56,.65,.59,.57,.62,.77];
+const neckHeights=[.56,.65,.59,.57,.62,.77,.66];
 export function animateCharacter(root,options={}){
  const active=sampleCharacter(root,options);connectCharacterPose(root,options);return active;
 }

@@ -1,8 +1,8 @@
 // Authored seconds, not random offsets. Camera and DOM share this physical sill.
 export const FRAME_SIZE=112,FRAME_SILL=.65;
 export const FRAME_SCENES=Object.freeze({frameHighFive:8,frameLean:7.5,frameSit:9,frameVault:10,framePeek:7.2,frameSleep:9,frameClean:8,frameFix:8,frameReact:7.2,frameYawn:9,frameCopy:9});
-export const frameLedge=face=>[.145,.15,.145,.205,.305,.07][face]??.15;
-export const framePalmX=face=>[[-.525,.525],[-.435,.435],[-.345,.345],[-.475,.475],[-.365,.365],[-.70,.71]][face]||[-.4,.4];
+export const frameLedge=face=>[.145,.15,.145,.205,.305,.07,.12][face]??.15;
+export const framePalmX=face=>[[-.525,.525],[-.435,.435],[-.345,.345],[-.475,.475],[-.365,.365],[-.70,.71],[-.46,.46]][face]||[-.4,.4];
 export const frameMask=pose=>Math.max(0,pose.clip/FRAME_SILL*(1-FRAME_SILL)*100-3.5);
 const smooth=x=>{x=Math.max(0,Math.min(1,x));return x*x*x*(x*(x*6-15)+10)};
 const rise=(t,a,b)=>smooth((t-a)/(b-a));
