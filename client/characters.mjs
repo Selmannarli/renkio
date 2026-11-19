@@ -3,6 +3,9 @@ import {sculptSpec,sculptGeometry,wardrobeSpec,wardrobeGeometry} from './sculpt-
 import {BAKED_ACCESSORY_FITS} from './accessory-surfaces.mjs';
 import {accessoryFit,REAR_PROFILES} from './character-fit.mjs';
 import {createFacialRig} from './facial-rig.mjs';
+import {preloadCharacterModels,hasGlbCharacter,buildGlbCharacter,glbFits,glbRear} from './glb-characters.mjs';
+export {preloadCharacterModels} from './glb-characters.mjs';
+if(typeof window!=='undefined')preloadCharacterModels();
 import {characterBodyColour,accessoryList,accessoryColour,accessoryById} from '../public/character-style.mjs';
 import * as T from 'three';
 import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
@@ -138,6 +141,17 @@ function pivotHead(head,y){for(const n of head.children)n.position.y-=y;head.pos
 export function createCharacter(face=0,colour=0,pose='seated',accessory='none',accessoryColours={}){
  face=Number.isInteger(face)&&face>=0&&face<7?face:0;colour=Number.isInteger(colour)&&colour>=0&&colour<8?colour:0;
  const root=new T.Group();root.name=['Pof','Robot','Cat','Cyclops','Dragon','Jelly','Star'][face];root.userData.face=face;root.userData.modelVersion=CHARACTER_MODEL_VERSION;
+ if(hasGlbCharacter(face)){
+  // Painted, skinned characters (renkio-3d). Bones carry the same names as the rigid parts.
+  const g=buildGlbCharacter(root,face,pose,characterBodyColour(face,colour),characterBodyColour(face,0));
+  const rear=glbRear(face),hips=group(g.torso,'Hips');hips.userData.anatomy=REAR_PROFILES[face]?.name;
+  if(rear){root.updateMatrixWorld(true);hips.position.copy(g.torso.worldToLocal(new T.Vector3(...rear.at)));const tone=characterBodyColour(face,colour)!==characterBodyColour(face,0)?characterBodyColour(face,colour):rear.colour,lobe=mat(tone,.62,0);for(const side of [-1,1])orb(hips,lobe,[side*rear.r*.78,0,0],[rear.r,rear.r*.92,rear.r*.82]);hips.userData.lobes=2}
+  root.userData.modelVersion=CHARACTER_MODEL_VERSION+'+glb';root.userData.skinSurface=g.probe;root.userData.headBox=g.headBox;
+  root.userData.rig={face,pose,facial:g.facial,rear:REAR_PROFILES[face],head:g.head,body:g.torso,eyes:g.eyes,pupils:[],lids:g.lids,arms:g.arms,forearms:g.arms.map(a=>a.userData.elbow).filter(Boolean),hands:g.arms.map(a=>a.userData.wrist).filter(Boolean),legs:g.legs,knees:g.knees,brows:[],mouth:null,tail:g.tail,accent:null,ears:[],hips,glb:true,mouthShapes:g.shapes,armGain:{0:.42,1:.68,2:.31,3:.28,5:.38,6:.47}[face]??.35,armLimit:{0:.48,1:.8,2:.36,3:.32,5:.45,6:.55}[face]??.4};
+  root.userData.pose=pose;
+  for(const id of accessoryList(accessory))addAccessory(root,id,accessoryColours);
+  root.updateMatrixWorld(true);return root;
+ }
  const body=skin(face,colour),head=group(root,'Head'),torso=group(root,'Torso'),eyes=[],lids=[],arms=[],eyebrows=[];
  let feet=[],mouth,tail=null,accent=null,ears=[];
  const addEye=(at,size=1,iris='#8054bb',robot=false)=>{const e=eyesV2(head,at,size,iris,robot);eyes.push(e.eye);lids.push(e.lid)};
@@ -192,30 +206,34 @@ const WARDROBE_DEFAULTS={cap:'#7b5cd6',beanie:'#ff8fb1',crown:'#5fd6e0',astralCr
  bow:'#7b5cd6',silkBow:'#c393df',royalBow:'#6c37ad',medal:'#e0475f',scarf:'#ff7a6b',bellCollar:'#e0475f',glasses:'#59456e',shades:'#342b50',stargaze:'#e4bc66',heartShades:'#ff5f8f',monocle:'#e4bc66'};
 const wardrobeMaterials=new Map();
 function wardrobeMaterial(id){if(!wardrobeMaterials.has(id))wardrobeMaterials.set(id,new T.MeshPhysicalMaterial({vertexColors:true,roughness:['crown','astralCrown','medal'].includes(id)?.3:.55,metalness:['crown','astralCrown','medal'].includes(id)?.25:0,sheen:.35,sheenRoughness:.55,sheenColor:new T.Color('#fff6fb'),clearcoat:.2,clearcoatRoughness:.35,...(id==='halo'?{emissive:new T.Color('#ffd65c'),emissiveIntensity:.7}:{})}));return wardrobeMaterials.get(id)}
+const wardrobeTop=id=>wardrobeSpec(id)?.max?.[1]??.1;
 // Sculpted vinyl wardrobe (design/sculpt/accessories.py) scaled to each character's measured head and neck.
 function addAccessory(root,id,colours={}){
  const rig=root.userData.rig,head=rig.head,item=accessoryById(id),slot=item?.slot;if(!slot)return;
- const fits=sculptSpec(rig.face).fits,tint=accessoryColour(colours,slot,WARDROBE_DEFAULTS[id]||'#7b5cd6');
- const fitParent=accessoryFit(rig.face,id,slot).parent,parent=fitParent==='body'?rig.body:head,mount=group(parent,'Accessory-'+id),lift=parent===head?head.position.y:0;
+ const fits=rig.glb?glbFits(rig.face):sculptSpec(rig.face).fits,tint=accessoryColour(colours,slot,WARDROBE_DEFAULTS[id]||'#7b5cd6');
+ const local=(p,x,y,z)=>{root.updateMatrixWorld(true);return p.worldToLocal(root.localToWorld(new T.Vector3(x,y,z)))};
+ const fitParent=rig.glb&&slot!=='neck'?'head':accessoryFit(rig.face,id,slot).parent,parent=fitParent==='body'?rig.body:head,mount=group(parent,'Accessory-'+id),lift=parent===head?head.position.y:0;
  mount.userData.attachment=id;mount.userData.slot=slot;mount.userData.fit={parent:fitParent};
- if(slot==='face'){buildEyewear(rig,mount,id,tint);batchColours(mount,{roughness:.35,metalness:['stargaze','monocle'].includes(id)?.5:.05});const piece=mount.children.find(n=>n.isMesh);if(piece){const source=piece.geometry;piece.geometry=geometry('eyewear:'+rig.face+':'+id+':'+tint,()=>{const g=source.clone();g.userData.owned=false;return g});source.dispose()}}
+ if(slot==='face'){buildEyewear(rig,mount,id,tint);batchColours(mount,{roughness:.35,metalness:['stargaze','monocle'].includes(id)?.5:.05});const piece=mount.children.find(n=>n.isMesh);if(piece){const source=piece.geometry;piece.geometry=geometry('eyewear:'+(rig.glb?'glb':'sculpt')+':'+rig.face+':'+id+':'+tint,()=>{const g=source.clone();g.userData.owned=false;return g});source.dispose()}}
  else{
   const spec=wardrobeSpec(id);mesh(mount,wardrobeGeometry(id,tint),wardrobeMaterial(id));
   if(slot==='head'){
    if(rig.accent)rig.accent.visible=false;
-   const h=fits.hat;mount.position.set(h.at[0],h.at[1]-head.position.y,h.at[2]);mount.scale.set(...h.size);
+   const h=rig.glb&&id==='bunnyEars'&&fits.band?fits.band:fits.hat;if(rig.glb)mount.position.copy(local(head,...h.at));else mount.position.set(h.at[0],h.at[1]-head.position.y,h.at[2]);mount.scale.set(...h.size);
   }else{
    const n=fits.neck;
-   if(spec.kind==='wrap'){mount.position.set(0,n.y-lift,n.cz);mount.scale.set(n.rx*1.08,n.rx*1.08,n.rz*1.1)}
-   else{const k=Math.max(.8,Math.min(1.5,n.rx/.2));mount.position.set(0,(n.fy??n.y)-.01-lift,n.front+.012);mount.scale.setScalar(k)}
+   if(spec.kind==='wrap'){if(rig.glb)mount.position.copy(local(parent,0,n.y,n.cz));else mount.position.set(0,n.y-lift,n.cz);mount.scale.set(n.rx*1.08,n.rx*1.08,n.rz*1.1)}
+   else if(rig.glb&&fits.front){const f=fits.front,k=f.scale*(id==='medal'?1.4:1),y=Math.min((n.fy??n.y)-.01,f.top-wardrobeTop(id)*k);mount.position.copy(local(parent,0,y,f.at(y)+.012));mount.scale.setScalar(k)}
+   else{const k=Math.max(.8,Math.min(1.5,n.rx/.2));if(rig.glb)mount.position.copy(local(parent,0,(n.fy??n.y)-.01,n.front+.012));else mount.position.set(0,(n.fy??n.y)-.01-lift,n.front+.012);mount.scale.setScalar(k)}
   }
  }
- clearAccessorySurface(root,mount,id);
- const baked=BAKED_ACCESSORY_FITS[rig.face+':'+id];if(baked)mount.position.fromArray(baked.at);
+ // Painted models: head fits are measured on the skull itself; ray clearance would lift hats onto antennas and ear tips.
+ if(!(rig.glb&&slot==='head'))clearAccessorySurface(root,mount,id);
+ const baked=!rig.glb&&BAKED_ACCESSORY_FITS[rig.face+':'+id];if(baked)mount.position.fromArray(baked.at);
 }
 // Eyewear follows the eyes: rims, tinted lenses and a bridge; no temples to clip through soft heads.
 function buildEyewear(rig,mount,id,tint){
- const spec=sculptSpec(rig.face),size=spec.eyes.size||[.06,.075,.034],rim=mat(tint,id==='stargaze'||id==='monocle'?.25:.4,id==='stargaze'||id==='monocle'?.55:.05),
+ const spec=rig.glb?{eyes:{size:rig.eyes[0]?.userData.size}}:sculptSpec(rig.face),size=spec.eyes.size||[.06,.075,.034],rim=mat(tint,id==='stargaze'||id==='monocle'?.25:.4,id==='stargaze'||id==='monocle'?.55:.05),
   lensMat=mat(id==='shades'?'#2b2440':id==='heartShades'?'#ff8fb3':'#bdeff2',.1,.05,{transparent:true,opacity:id==='shades'?.82:id==='heartShades'?.55:.18,side:T.DoubleSide});
  const eyes=id==='monocle'?rig.eyes.slice(-1):rig.eyes,r=Math.max(size[0],size[1])*1.55,front=Math.max(size[2],.02)*.9+.03;
  const outline=(kind,cx,cy)=>{const pts=[];if(kind==='heart'){for(let i=0;i<=48;i++){const t=i/48*Math.PI*2,x=16*Math.sin(t)**3,y=13*Math.cos(t)-5*Math.cos(2*t)-2*Math.cos(3*t)-Math.cos(4*t);pts.push([cx+x/17*r,cy+y/17*r+r*.1])}}
@@ -236,7 +254,7 @@ function buildEyewear(rig,mount,id,tint){
 }
 
 const headContacts=new Map();
-function anatomySurfaces(root){const rig=root.userData.rig,skin=[];for(const parent of [rig.head,rig.body])parent.traverse(n=>{if(!n.isMesh||n.userData.surfaceFace||hasAccessoryParent(n))return;for(let p=n;p;p=p.parent)if(p===rig.accent||!p.visible)return;skin.push(n)});return skin}
+function anatomySurfaces(root){const rig=root.userData.rig,skin=root.userData.skinSurface?[root.userData.skinSurface]:[];for(const parent of [rig.head,rig.body])parent.traverse(n=>{if(!n.isMesh||n.userData.surfaceFace||hasAccessoryParent(n))return;for(let p=n;p;p=p.parent)if(p===rig.accent||!p.visible)return;skin.push(n)});return skin}
 function headwearContact(root,id,fit){
  const key=root.userData.face+':'+id;if(headContacts.has(key))return headContacts.get(key);root.updateMatrixWorld(true);const skin=anatomySurfaces(root),ray=new T.Raycaster(),[rx,,rz]=fit.size,[cx,,cz]=fit.at;
  const top=(x,z)=>{ray.set(new T.Vector3(x,3,z),new T.Vector3(0,-1,0));return ray.intersectObjects(skin,false)[0]?.point.y};
@@ -265,7 +283,7 @@ function sideContact(root,side,y,z,fallback){const key=[root.userData.face,side,
 // Fit the entire piece, not just its centre: curved skin can protrude through
 // a wing, bridge or hat rim even when the attachment anchor itself is clear.
 function clearAccessorySurface(root,mount,id){
- const rig=root.userData.rig;if(BAKED_ACCESSORY_FITS[rig.face+':'+id])return;
+ const rig=root.userData.rig;if(!rig.glb&&BAKED_ACCESSORY_FITS[rig.face+':'+id])return;
  root.updateMatrixWorld(true);const skin=anatomySurfaces(root),up=mount.userData.slot==='head',ray=new T.Raycaster(),point=new T.Vector3(),wrapMid=wardrobeSpec(id)?.kind==='wrap'?new T.Vector3().setFromMatrixPosition(mount.matrixWorld).z+.02:null;let correction=0;
  const sample=p=>{
   if(wrapMid!==null&&p.z<wrapMid)return;

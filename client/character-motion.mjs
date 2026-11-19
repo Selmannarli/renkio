@@ -31,6 +31,8 @@ export function resetCharacter(root){
  restore(root,state.root);for(const [n,rest]of state.nodes)restore(n,rest);
  state.rig.facial?.reset();setMouth(state.rig,'neutral');for(const lid of state.rig.lids||[])lid.visible=false;
 }
+// Painted (glb) faces have their own mouth for every feeling.
+function glbMouth(mood,emotion){if(mood==='surprise'||mood==='appleHit')return 'surprise';if(mood==='angry'||mood==='lossAngry'||mood==='lossStomp')return 'angry';return emotion}
 function setMouth(rig,expression){
  rig.facial?.expression(expression);const mouth=rig.mouth||rig.mouths;if(!mouth)return;
  for(const key of ['neutral','happy','sad'])if(mouth[key])mouth[key].visible=key===expression;
@@ -64,7 +66,7 @@ function key(t,points){
  return points.at(-1)[1];
 }
 function jump(t,start,duration,height){const p=(t-start)/duration;return p>0&&p<1?4*height*p*(1-p):0}
-function arm(rig,index,lift,forward=0){const n=rig.arms?.[index];if(!n)return;const sign=index%2===0?-1:1;rotate(n,forward,0,sign*lift)}
+function arm(rig,index,lift,forward=0){const n=rig.arms?.[index];if(!n)return;const sign=index%2===0?-1:1,g=rig.armGain??1;rotate(n,forward*g,0,sign*lift*g)}
 function bend(rig,index,elbow=0,wrist=0){
  const fore=rig.forearms?.[index],hand=rig.hands?.[index];
  rotate(fore,-elbow,0,0);rotate(hand,0,wrist*.3,(index?1:-1)*wrist);
@@ -164,7 +166,7 @@ function greet(rig,t,face,root=null){
   bend(rig,0,engaged*.6,-wave*.8);bend(rig,1,engaged*.6,wave);
   rotate(rig.head,-engaged*.03,0,engaged*.055);
  }else{
-  (rig.arms||[]).forEach((n,i)=>{const cue=envelope(t,.04+i*.045,.36+i*.045,1.06+i*.035,1.62+i*.035);rotate(n,-cue*.24,0,(i<3?-1:1)*cue*(.29+Math.sin(t*5-i*.75)*.055));rotate(rig.forearms?.[i],0,0,(i<3?-1:1)*cue*.26)});
+  (rig.arms||[]).forEach((n,i)=>{const cue=envelope(t,.04+i*.045,.36+i*.045,1.06+i*.035,1.62+i*.035);rotate(n,-cue*.24,0,(i<rig.arms.length/2?-1:1)*cue*(.29+Math.sin(t*5-i*.75)*.055));rotate(rig.forearms?.[i],0,0,(i<rig.arms.length/2?-1:1)*cue*.26)});
   rotate(rig.head,-engaged*.035,engaged*.06,-engaged*.035);
  }
 }
@@ -179,7 +181,7 @@ function celebrate(rig,root,t,face,duration){
   const strength=[1,.92,.88,.96,1,1,1][face];
   arm(rig,0,(raise*1.52+pulse)*strength,-raise*.12);arm(rig,1,(raise*1.65+pulse*.8)*strength,-raise*.15);
   bend(rig,0,raise*.47,raise*.08);bend(rig,1,raise*.60,-raise*.08);
- }else (rig.arms||[]).forEach((n,i)=>{rotate(n,-raise*.20,0,(i<3?-1:1)*raise*(.38+Math.sin(t*6-i*.65)*.045));rotate(rig.forearms?.[i],0,0,(i<3?-1:1)*raise*.25)});
+ }else (rig.arms||[]).forEach((n,i)=>{rotate(n,-raise*.20,0,(i<rig.arms.length/2?-1:1)*raise*(.38+Math.sin(t*6-i*.65)*.045));rotate(rig.forearms?.[i],0,0,(i<rig.arms.length/2?-1:1)*raise*.25)});
  rotate(rig.tail,0,Math.sin(t*5)*raise*.23,0);rotate(rig.accent,0,0,Math.sin(t*6)*raise*.045);
  (rig.ears||[]).forEach((n,i)=>rotate(n,0,0,(i?1:-1)*raise*.035));
 }
@@ -219,7 +221,7 @@ function selectedGreeting(root,rig,mood,t,face,duration){
   const lift=key(t,[[0,0],[.16,-.045],[.57,1.9],[1.65,1.9],[2.10,.30],[duration,0]]);
   for(const side of [-1,1])handPose(rig,side,lift,-a*.18,a*.53,w*(side<0?-.85:1));
   rotate(rig.head,-a*.08,Math.sin(t*3)*a*.035,0);
-  if(face===5)rig.arms.forEach((n,i)=>{if(i===0||i===rig.arms.length-1)return;rotate(n,-a*.13,0,(i<3?-1:1)*a*.28)});
+  if(face===5)rig.arms.forEach((n,i)=>{if(i===0||i===rig.arms.length-1)return;rotate(n,-a*.13,0,(i<rig.arms.length/2?-1:1)*a*.28)});
  }else if(mood==='greetNod'){
   const nod=envelope(t,.18,.45,.60,.82)+envelope(t,.83,1.10,1.23,1.55)*.70;
   rotate(rig.head,nod*.24,-a*.035,0);blink(rig,Math.max(blinkAt(t,.40,.06),blinkAt(t,1.05,.04)));
@@ -262,7 +264,7 @@ function selectedWin(root,rig,mood,t,face,duration){
 }
 function selectedLoss(root,rig,mood,t,face,duration){
  const a=envelope(t,.05,.52,duration-.62,duration),angry=mood==='lossAngry'||mood==='lossStomp';
- brow(rig,angry?'angry':'sad',a);setMouth(rig,'sad');
+ brow(rig,angry?'angry':'sad',a);setMouth(rig,rig.glb&&angry?'angry':'sad');
  if(mood==='lossSad'){
   rotate(rig.head,a*.19,-a*.05,-a*.06);rotate(rig.body,a*.035,0,0);
   for(const side of [-1,1])handPose(rig,side,a*.10,a*.06,a*.16,Math.sin(t*3)*a*.045);
@@ -281,7 +283,7 @@ function selectedLoss(root,rig,mood,t,face,duration){
   const wind=envelope(t,.30,.54,.70,.86),impact=envelope(t,.77,.84,.90,1.10),settle=envelope(t,1.20,1.38,1.58,1.87);
   rotate(rig.head,a*.055,-impact*.09,impact*.035);for(const side of [-1,1])handPose(rig,side,a*(.46+impact*.20),-a*.11,a*.80);
   if(rig.pose!=='seated'&&face!==5){rotate(rig.legs?.[1],-wind*.48+settle*.08,0,0);rotate(rig.knees?.[1],wind*.85,0,0)}
-  if(face===5)rig.arms.forEach((n,i)=>rotate(n,-wind*.22+impact*.10,0,(i<3?-1:1)*impact*.12));
+  if(face===5)rig.arms.forEach((n,i)=>rotate(n,-wind*.22+impact*.10,0,(i<rig.arms.length/2?-1:1)*impact*.12));
   rotate(rig.body,impact*.04,0,0);blink(rig,blinkAt(t,.84,.04,.05,.12));
  }
  if(face===5&&mood!=='lossStomp')rig.arms.forEach((n,i)=>rotate(n,a*.025,0,(i<3?1:-1)*a*.06));
@@ -297,7 +299,7 @@ function visitorGesture(root,rig,mood,t,face,duration){
   root.rotation.y=1.0;rotate(root,0,0,-.16);rotate(rig.head,-.08,-.13,0);
   handPose(rig,1,.78,-1.05,.12);handPose(rig,-1,.20,.42,.72);
   (rig.legs||[]).forEach((leg,i)=>{rotate(leg,-.34-i*.10,0,0);rotate(rig.knees?.[i],.78+i*.12,0,0)});
-  if(face===5)rig.arms.forEach((n,i)=>rotate(n,-.25,0,(i<3?-1:1)*.16));
+  if(face===5)rig.arms.forEach((n,i)=>rotate(n,-.25,0,(i<rig.arms.length/2?-1:1)*.16));
  }else if(mood==='visitorStrike'){
   const wind=envelope(t,0,.13,.17,.27),hit=envelope(t,.17,.28,.33,.54);
   root.rotation.y=.95;rotate(rig.body,0,-wind*.15+hit*.19,0);rotate(rig.head,-.035,-.12,0);
@@ -344,7 +346,7 @@ function sampleCharacter(root,{time=0,face=root?.userData?.rig?.face??root?.user
  face=Number.isInteger(face)&&face>=0&&face<6?face:0;time=Number.isFinite(time)?Math.max(0,time):0;elapsed=Number.isFinite(elapsed)?Math.max(0,elapsed):0;
  if(mood==='idle'||typeof mood!=='string'||!Object.hasOwn(CHARACTER_DURATIONS,mood)){if(!reduced)idle(rig,time,face,root);return !reduced}
  const emotion=animationEmotion(mood),duration=CHARACTER_DURATIONS[mood];
- setMouth(rig,emotion);
+ setMouth(rig,rig.glb?glbMouth(mood,emotion):emotion);
  const browEmotion=mood==='appleHit'||mood==='lossAngry'||mood==='lossStomp'?'angry':emotion;
  if(reduced){brow(rig,browEmotion,.5);return false}
  if(elapsed>=duration){if(hasEmoteClip(mood))rig.facial?.reset();else brow(rig,browEmotion,.45);return false}
@@ -380,7 +382,7 @@ function sampleCharacter(root,{time=0,face=root?.userData?.rig?.face??root?.user
   arm(rig,0,.12,-step*.18);arm(rig,1,.15+hit*1.6,step*.18-hit*.55);bend(rig,1,.2+hit*.65);
   rotate(rig.head,hit*.06,hit*.15,0);brow(rig,'happy',hit);setMouth(rig,'happy');
  }else if(mood==='angry'){
-const a=envelope(elapsed,0,.25,1.1,1.8);setMouth(rig,'sad');brow(rig,'angry',a);rotate(rig.head,.08*a,Math.sin(elapsed*15)*.035*a,0);arm(rig,0,.25*a);arm(rig,1,.25*a);bend(rig,0,a*.75);bend(rig,1,a*.75);if(rig.pose!=='seated')move(root,0,jump(elapsed,.3,.25,.025),0)}
+const a=envelope(elapsed,0,.25,1.1,1.8);setMouth(rig,rig.glb?'angry':'sad');brow(rig,'angry',a);rotate(rig.head,.08*a,Math.sin(elapsed*15)*.035*a,0);arm(rig,0,.25*a);arm(rig,1,.25*a);bend(rig,0,a*.75);bend(rig,1,a*.75);if(rig.pose!=='seated')move(root,0,jump(elapsed,.3,.25,.025),0)}
  else if(mood==='draw'){const a=envelope(elapsed,.03,.35,1.15,1.78);brow(rig,'happy',a*.6);rotate(rig.head,-a*.035,a*.04,0);arm(rig,0,a*.25);arm(rig,1,a*.25);bend(rig,0,a*.25);bend(rig,1,a*.25)}
  else if(mood==='surprise'){const a=envelope(elapsed,0,.18,.8,1.5),startle=envelope(elapsed,0,.08,.16,.34);if(rig.pose!=='seated')move(root,0,jump(elapsed,.02,.3,.035),0);if(face!==1)stretch(rig.body,1-startle*.03,1+startle*.06,1-startle*.03);brow(rig,'happy',a);rotate(rig.head,-.1*a,0,0);rig.facial?.expression('surprise');arm(rig,0,.65*a);arm(rig,1,.65*a);bend(rig,0,a*.35);bend(rig,1,a*.35)}
  else if(mood==='impact'){
@@ -405,13 +407,20 @@ const a=envelope(elapsed,0,.25,1.1,1.8);setMouth(rig,'sad');brow(rig,'angry',a);
 // keeping its attachment point fixed instead of turning through the chest.
 const neckHeights=[.56,.65,.59,.57,.62,.77,.66];
 export function animateCharacter(root,options={}){
- const active=sampleCharacter(root,options);connectCharacterPose(root,options);return active;
+ const active=sampleCharacter(root,options);limitArms(root);connectCharacterPose(root,options);return active;
+}
+// Painted vinyl arms are fused to the body: beyond a measured angle the side of the body tears.
+// Big gestures ease softly into that limit instead of stretching the skin.
+const softLimit=(v,l)=>l*Math.tanh(v/l);
+function limitArms(root){
+ const rig=root?.userData?.rig;if(!rig?.glb||!rig.armLimit)return;const l=rig.armLimit,e=new Euler();
+ for(const a of rig.arms||[]){e.setFromQuaternion(a.quaternion,'XYZ');e.set(softLimit(e.x,l*1.1),softLimit(e.y,l),softLimit(e.z,l),'XYZ');a.quaternion.setFromEuler(e)}
 }
 export function connectCharacterPose(root,options={}){
  const state=stateFor(root);if(!state)return;
  const rig=state.rig,head=rig.head,body=rig.body,h=state.nodes.get(head),b=state.nodes.get(body);
  const headDelta=new Euler(...head.rotation.toArray().slice(0,3).map((v,i)=>clamp(v-h.rotation[i],-.19,.19)));
- const q=new Quaternion().setFromEuler(headDelta),offset=new Vector3(0,h.position[1]-neckHeights[rig.face??options.face??0],0),shift=offset.clone().applyQuaternion(q).sub(offset);
+ const q=new Quaternion().setFromEuler(headDelta),offset=new Vector3(0,rig.glb?0:h.position[1]-neckHeights[rig.face??options.face??0],0),shift=offset.clone().applyQuaternion(q).sub(offset);
  head.rotation.set(h.rotation[0]+headDelta.x,h.rotation[1]+headDelta.y,h.rotation[2]+headDelta.z);head.position.set(...h.position).add(shift);
  const torso=new Quaternion().setFromEuler(new Euler(...body.rotation.toArray().slice(0,3).map((v,i)=>v-b.rotation[i])));
  const carries=Math.abs(torso.x)+Math.abs(torso.y)+Math.abs(torso.z)>1e-10;body.rotation.set(...b.rotation);if(carries)root.quaternion.multiply(torso);

@@ -1,4 +1,5 @@
-import {AnimationMixer,AnimationClip,QuaternionKeyframeTrack,VectorKeyframeTrack,NumberKeyframeTrack,Quaternion,Euler,LoopOnce} from 'three';
+import {animationEmotion} from '../public/animation-style.mjs';
+import {AnimationMixer,AnimationClip,QuaternionKeyframeTrack,VectorKeyframeTrack,NumberKeyframeTrack,Quaternion,Euler,LoopOnce,BooleanKeyframeTrack} from 'three';
 
 // Authored normalized beat sheets. Poses are compiled lazily for each existing rig;
 // sampling is absolute, so shared portrait models can seek without accumulating motion.
@@ -85,6 +86,7 @@ function choreography(mood,t,face,seated){
  return p;
 }
 
+const clipMouth=m=>m==='surprise'?'surprise':/Angry|Stomp/.test(m)||m==='angry'?'angry':animationEmotion(m);
 function compile(root,mood,duration){
  const rig=root.userData.rig,face=rig.face??0,seated=rig.pose==='seated',steps=Math.ceil(duration*45),times=Array.from({length:steps+1},(_,i)=>i*duration/steps),poses=times.map(t=>choreography(mood,t/duration,face,seated)),tracks=[];
  const delayed=delay=>times.map((t,i)=>i===steps?poses[i]:choreography(mood,Math.max(0,(t-delay)/duration),face,seated)),elbowPoses=delayed(.035),wristPoses=delayed(.065);
@@ -92,7 +94,7 @@ function compile(root,mood,duration){
  const number=(node,path,sample)=>{if(node)tracks.push(new NumberKeyframeTrack(node.uuid+'.'+path,times,poses.map(sample)))};
  rotation(rig.body,p=>p.body);rotation(rig.head,p=>p.head);
  for(let i=0;i<rig.arms.length;i++){
-  const side=face===5?(i<3?-1:1):(i?1:-1),outer=face!==5||i===0||i===rig.arms.length-1,lag=face===5?(outer?.24:.18):1;
+  const side=face===5?(i<rig.arms.length/2?-1:1):(i?1:-1),outer=face!==5||i===0||i===rig.arms.length-1,lag=(face===5?(outer?.24:.18):1)*(rig.armGain??1);
   rotation(rig.arms[i],p=>{const a=side<0?p.left:p.right;return [a[0]*lag,0,a[2]*lag+(outer?0:side*p.secondary)]});
   rotation(rig.forearms?.[i],(_,k)=>{const p=elbowPoses[k];return [p.elbows[side<0?0:1]*lag,0,side*p.secondary*.4]});
   rotation(rig.hands?.[i],(_,k)=>{const p=wristPoses[k];return [0,side*p.secondary*.35,p.wrists[side<0?0:1]*lag+side*p.secondary]});
@@ -104,6 +106,13 @@ function compile(root,mood,duration){
  const f=rig.facial;
  for(const mesh of [f?.mesh,...(f?.details||[])])for(let i=0;i<3;i++)number(mesh,'morphTargetInfluences['+i+']',p=>[p.happy,p.sad,p.surprise][i]);
  for(const b of f?.brows||[])for(let i=0;i<3;i++)number(b.children[0],'morphTargetInfluences['+i+']',p=>[p.happy*.75,p.angry?0:p.sad,p.angry][i]);
+ // Painted (glb) faces: blinks show the lid patch, and the mouth patch follows the clip's feeling.
+ if(rig.glb){
+  for(const [i,lid] of (rig.lids||[]).entries())tracks.push(new BooleanKeyframeTrack(lid.uuid+'.visible',times,poses.map(p=>Math.max(p.blink,i===0?p.wink:0)>.55)));
+  const shapes=rig.mouthShapes||{},base=clipMouth(mood);
+  const pick=p=>{if(p.angry>.3)return 'angry';const best=[['surprise',p.surprise],['happy',p.happy],['sad',p.sad]].sort((a,b)=>b[1]-a[1])[0];return best[1]>.35?best[0]:base};
+  for(const [k,mesh]of Object.entries(shapes))tracks.push(new BooleanKeyframeTrack(mesh.uuid+'.visible',times,poses.map(p=>pick(p)===k)));
+ }
  for(const [i,eye] of (rig.eyes||[]).entries()){const rest=eye.scale.toArray();tracks.push(new VectorKeyframeTrack(eye.uuid+'.scale',times,poses.flatMap(p=>[rest[0],rest[1]*(1-Math.max(p.blink,i===0?p.wink:0)*.94),rest[2]])))}
  for(const pupil of rig.pupils||[]){const y=pupil.position.y;number(pupil,'position[y]',p=>y+p.look)}
  const clip=new AnimationClip('renkio:'+mood,duration,tracks);clip.userData={authored:true};return clip;

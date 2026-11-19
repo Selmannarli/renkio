@@ -13,7 +13,7 @@ const copyPose=pose=>pose?.map(p=>({...p,position:p.position.clone(),quaternion:
 // stacking, clipping and dialog rules, and never create another WebGL context.
 export class CharacterPortraits{
  constructor({reduced=()=>false}={}){
-  this.reduced=reduced;this.records=new Map();this.models=new Map();this.frame=null;this.lastFrame=0;this.dirty=true;this.lost=false;
+  this.reduced=reduced;this.records=new Map();this.models=new Map();this.onModels=()=>{for(const {root}of this.models.values())disposePerson(root);this.models.clear();for(const r of this.records.values()){r.lastPose=null;r.transition=null}this.invalidate()};if(typeof window!=='undefined')window.addEventListener('renkio:characters-ready',this.onModels);this.frame=null;this.lastFrame=0;this.dirty=true;this.lost=false;
   this.renderer=new T.WebGLRenderer({alpha:true,antialias:true,powerPreference:'low-power'});this.renderer.setPixelRatio(1);this.renderer.setSize(384,384,false);this.renderer.outputColorSpace=T.SRGBColorSpace;this.renderer.toneMapping=T.ACESFilmicToneMapping;this.renderer.toneMappingExposure=.94;this.renderer.setClearColor(0,0);
   this.scene=new T.Scene();const room=new RoomEnvironment(),pmrem=new T.PMREMGenerator(this.renderer);this.environment=pmrem.fromScene(room,.04);this.scene.environment=this.environment.texture;this.scene.environmentIntensity=.45;room.dispose();pmrem.dispose();
   this.scene.add(new T.HemisphereLight('#fff3ff','#64506d',.65));const key=new T.DirectionalLight('#fff1df',2.1);key.position.set(-3,5,6);this.scene.add(key);const rim=new T.DirectionalLight('#c9b4ff',1.15);rim.position.set(4,3,-3);this.scene.add(rim);
@@ -85,5 +85,5 @@ export class CharacterPortraits{
   }
   this.dirty=false;this.lastFrame=now;if(alive)this.request();
  }
- dispose(){this.pause();this.observer.disconnect();this.resizeObserver.disconnect();for(const r of this.records.values()){clearTimeout(r.timer);clearTimeout(r.holdTimer)}this.records.clear();for(const {root}of this.models.values())disposePerson(root);this.models.clear();this.environment.dispose();this.renderer.dispose()}
+ dispose(){if(typeof window!=='undefined')window.removeEventListener('renkio:characters-ready',this.onModels);this.pause();this.observer.disconnect();this.resizeObserver.disconnect();for(const r of this.records.values()){clearTimeout(r.timer);clearTimeout(r.holdTimer)}this.records.clear();for(const {root}of this.models.values())disposePerson(root);this.models.clear();this.environment.dispose();this.renderer.dispose()}
 }
